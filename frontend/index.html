@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f8f7">
+  <title>AquaSense | Tank Monitor</title>
+  <link rel="stylesheet" href="css/styles.css?v=4">
+  <script src="js/dashboard.js?v=4" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+    <header class="topbar" id="topbar">
+      <a class="brand" href="#main" aria-label="AquaSense dashboard home">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span class="brand-name">Aqua<span>Sense</span></span>
+      </a>
+      <div class="topbar-right">
+        <div class="connection-pill" id="connection-status" role="status" aria-live="polite">
+          <span class="connection-dot"></span><span id="connection-label">Connecting</span>
+        </div>
+        <button class="icon-button" id="refresh-button" type="button" aria-label="Refresh dashboard" title="Refresh dashboard">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="main" class="dashboard">
+      <section class="page-heading reveal" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">AQUASENSE · FIELD SYSTEMS</p>
+          <h1 id="page-title">Water, in balance.</h1>
+          <p class="page-subtitle">A live pulse on your tank, with every reading in view.</p>
+        </div>
+        <div class="tank-selector" aria-label="Selected tank">
+          <span class="tank-icon" aria-hidden="true">⌖</span>
+          <span><strong>Storage tank</strong><small>Device · tank-001</small></span>
+          <span class="selector-chevron" aria-hidden="true">⌄</span>
+        </div>
+      </section>
+
+      <div class="state-banner loading-banner" id="loading-state" role="status" hidden>
+        <span class="spinner" aria-hidden="true"></span><span>Loading your latest tank data…</span>
+      </div>
+      <div class="state-banner error-banner" id="error-state" role="alert" hidden>
+        <span class="state-icon" aria-hidden="true">!</span>
+        <span><strong>We couldn’t load tank data.</strong> <span id="error-message">Check that the AquaSense API is running, then try again.</span></span>
+        <button class="text-button" id="retry-button" type="button">Try again</button>
+      </div>
+
+      <section class="metric-grid" id="metric-grid" aria-label="Tank metrics" aria-busy="true">
+        <article class="card level-card reveal">
+          <div class="card-heading"><div><p class="card-label">CURRENT LEVEL</p><p class="card-context">Live tank capacity</p></div><span class="status-chip" id="level-status">—</span></div>
+          <div class="level-content">
+            <div class="level-gauge" id="level-gauge" role="img" aria-label="Current tank level" style="--level-angle: 0deg">
+              <div class="gauge-inner"><span class="gauge-value" id="current-level">—</span><span class="gauge-unit">percent full</span></div>
+            </div>
+            <div class="level-details"><div class="detail-row"><span class="detail-dot current-dot"></span><span>Current</span><strong id="current-caption">—</strong></div><div class="detail-row"><span class="detail-dot threshold-dot"></span><span>Low threshold</span><strong>20%</strong></div></div>
+          </div>
+          <div class="card-footer"><span class="footer-icon" aria-hidden="true">↻</span>Last updated <strong id="last-updated">—</strong></div>
+        </article>
+
+        <article class="card stat-card reveal">
+          <div class="stat-top"><span class="stat-icon min-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M7 12h10m-7 5h4"/><path d="M5 4v16"/></svg></span><span class="stat-period">TODAY</span></div>
+          <p class="card-label">MINIMUM LEVEL</p><div class="stat-value" id="minimum-level">—<span>%</span></div>
+          <p class="stat-description">Lowest recorded tank level</p>
+          <div class="stat-accent min-accent"></div>
+        </article>
+
+        <article class="card stat-card reveal">
+          <div class="stat-top"><span class="stat-icon max-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17h16M7 12h10m-7-5h4"/><path d="M19 4v16"/></svg></span><span class="stat-period">TODAY</span></div>
+          <p class="card-label">MAXIMUM LEVEL</p><div class="stat-value" id="maximum-level">—<span>%</span></div>
+          <p class="stat-description">Highest recorded tank level</p>
+          <div class="stat-accent max-accent"></div>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="card chart-card reveal">
+          <div class="section-heading"><div><p class="card-label">TANK PERFORMANCE</p><h2>Level history</h2><p class="section-subtitle">Readings over time · percentage of capacity</p></div><div class="chart-legend"><span><i class="legend-reading"></i>Tank level</span><span><i class="legend-threshold"></i>20% threshold</span></div></div>
+          <div class="chart-wrap" id="chart-wrap">
+            <svg id="history-chart" class="history-chart" role="img" aria-labelledby="chart-title chart-desc" viewBox="0 0 760 280" preserveAspectRatio="none">
+              <title id="chart-title">Tank level history</title><desc id="chart-desc">Tank readings over time with a 20 percent low-level threshold.</desc>
+              <g id="chart-grid"></g><g id="chart-threshold"></g><g id="chart-area"></g><g id="chart-line"></g><g id="chart-points"></g><g id="chart-labels"></g>
+            </svg>
+            <div class="chart-empty" id="chart-empty" hidden>Not enough readings to draw a history yet.</div>
+          </div>
+        </article>
+
+        <aside class="side-column" aria-label="Tank alerts and events">
+          <article class="card alert-card reveal">
+            <div class="section-heading compact-heading"><div><p class="card-label">LIVE MONITORING</p><h2>Active alerts</h2></div><span class="count-badge" id="active-count">0</span></div>
+            <div class="alert-content" id="active-alerts" aria-live="polite"><div class="empty-state"><span class="empty-check" aria-hidden="true">✓</span><div><strong>All clear</strong><p>No active tank alerts right now.</p></div></div></div>
+          </article>
+          <article class="card events-card reveal">
+            <div class="section-heading compact-heading"><div><p class="card-label">PAST READINGS</p><h2>Low-level events</h2></div><span class="count-badge muted-badge" id="event-count">0</span></div>
+            <div class="event-list" id="historical-events"><div class="event-empty">No historical low-level events.</div></div>
+          </article>
+        </aside>
+      </section>
+
+      <footer class="dashboard-footer reveal"><span><span class="footer-live-dot"></span> Connected to AquaSense API</span><span>Low-level threshold <strong>20%</strong></span></footer>
+    </main>
+  </div>
+</body>
+</html>
