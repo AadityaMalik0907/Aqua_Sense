@@ -1,106 +1,455 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f4f8f7">
-  <title>AquaSense | Tank Monitor</title>
-  <link rel="stylesheet" href="css/styles.css?v=4">
-  <script src="js/dashboard.js?v=4" defer></script>
+  <meta name="theme-color" content="#060d17">
+  <title>AquaSense | Intelligent Tank Telemetry</title>
+  
+  <!-- Modern Typography with System Fallbacks -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/styles.css?v=5">
+  <script src="js/dashboard.js?v=5" defer></script>
 </head>
 <body>
-  <div class="app-shell">
-    <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
-    <header class="topbar" id="topbar">
-      <a class="brand" href="#main" aria-label="AquaSense dashboard home">
-        <span class="brand-mark" aria-hidden="true"><span></span></span>
-        <span class="brand-name">Aqua<span>Sense</span></span>
-      </a>
-      <div class="topbar-right">
-        <div class="connection-pill" id="connection-status" role="status" aria-live="polite">
-          <span class="connection-dot"></span><span id="connection-label">Connecting</span>
+  <!-- ========================================================
+       WELCOME / SPLASH SCREEN EXPERIENCE
+       ======================================================== -->
+  <aside class="welcome-screen" id="welcome-screen" role="dialog" aria-modal="true" aria-label="Welcome to AquaSense">
+    <div class="welcome-bg">
+      <div class="welcome-mesh"></div>
+      <div class="welcome-orb orb-1"></div>
+      <div class="welcome-orb orb-2"></div>
+      <div class="welcome-orb orb-3"></div>
+      <div class="water-waves-bg">
+        <svg class="bg-wave bg-wave-1" viewBox="0 0 1440 280" fill="none" preserveAspectRatio="none">
+          <path d="M0,96L48,112C96,128,192,160,288,165.3C384,171,480,149,576,128C672,107,768,85,864,101.3C960,117,1056,171,1152,181.3C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" fill="currentColor"/>
+        </svg>
+        <svg class="bg-wave bg-wave-2" viewBox="0 0 1440 280" fill="none" preserveAspectRatio="none">
+          <path d="M0,192L48,181.3C96,171,192,149,288,149.3C384,149,480,171,576,181.3C672,192,768,192,864,176C960,160,1056,128,1152,122.7C1248,117,1344,139,1392,149.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="particles" id="welcome-particles" aria-hidden="true"></div>
+    </div>
+
+    <div class="welcome-card">
+      <div class="welcome-chip">
+        <span class="chip-pulse-dot"></span>
+        <span class="chip-label">INTELLIGENT FLUID TELEMETRY</span>
+      </div>
+
+      <div class="welcome-hero-mark">
+        <div class="droplet-ring ring-3"></div>
+        <div class="droplet-ring ring-2"></div>
+        <div class="droplet-ring ring-1"></div>
+        <div class="droplet-core">
+          <svg class="droplet-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="dropGradWelcome" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8"/>
+                <stop offset="45%" stop-color="#06b6d4"/>
+                <stop offset="100%" stop-color="#0284c7"/>
+              </linearGradient>
+              <linearGradient id="dropSheen" x1="16" y1="10" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#ffffff" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M24 4C24 4 10 19 10 29.5C10 37.232 16.268 43.5 24 43.5C31.732 43.5 38 37.232 38 29.5C38 19 24 4 24 4Z" fill="url(#dropGradWelcome)"/>
+            <path d="M24 7C24 7 13.5 19.5 13.5 29C13.5 34.5 17.5 39 23 39.5C23.8 39.6 23.5 38 23.5 35.5C23.5 28.5 20 24 23 17C23.6 15.5 24 7 24 7Z" fill="url(#dropSheen)"/>
+            <circle cx="20" cy="33" r="2.5" fill="#ffffff" fill-opacity="0.7"/>
+          </svg>
         </div>
-        <button class="icon-button" id="refresh-button" type="button" aria-label="Refresh dashboard" title="Refresh dashboard">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"/></svg>
+      </div>
+
+      <div class="welcome-brand">
+        <h1 class="welcome-title">Aqua<span class="brand-gradient-text">Sense</span></h1>
+        <p class="welcome-tagline">Real-Time Water Telemetry, Dynamic Level Analytics &amp; Safety Monitoring</p>
+      </div>
+
+      <div class="welcome-highlights">
+        <div class="highlight-pill">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          <span>Live Reservoir Level</span>
+        </div>
+        <div class="highlight-pill">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          <span>Threshold Safety Guard</span>
+        </div>
+        <div class="highlight-pill">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+          <span>Trend History</span>
+        </div>
+      </div>
+
+      <div class="welcome-actions">
+        <button class="welcome-btn" id="enter-dashboard-btn" type="button" aria-label="Enter AquaSense Dashboard">
+          <span class="btn-ripple-layer"></span>
+          <span class="btn-text">Enter Dashboard</span>
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
         </button>
+
+        <div class="welcome-timer-group">
+          <div class="timer-track">
+            <div class="timer-fill" id="welcome-timer-fill"></div>
+          </div>
+          <p class="timer-caption" id="welcome-timer-caption">Entering in <strong id="welcome-countdown">3</strong>s · or click above</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================
+       MAIN APPLICATION SHELL
+       ======================================================== -->
+  <div class="app-shell" id="app-shell">
+    <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+    <!-- Ambient background mesh -->
+    <div class="app-ambient-bg" aria-hidden="true">
+      <div class="ambient-glow glow-top"></div>
+      <div class="ambient-glow glow-right"></div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header class="topbar" id="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#main" aria-label="AquaSense dashboard home">
+          <div class="brand-mark-modern" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2.5C12 2.5 5 10 5 15.5C5 19.0899 8.13401 22 12 22C15.866 22 19 19.0899 19 15.5C19 10 12 2.5 12 2.5Z" fill="url(#topDropGrad)"/>
+              <defs>
+                <linearGradient id="topDropGrad" x1="12" y1="2.5" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#38bdf8"/>
+                  <stop offset="100%" stop-color="#0284c7"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span class="mark-bubble"></span>
+          </div>
+          <span class="brand-name">Aqua<span>Sense</span></span>
+          <span class="brand-badge">v2.4</span>
+        </a>
+
+        <div class="topbar-right">
+          <!-- Connection Status Pill -->
+          <div class="connection-pill" id="connection-status" role="status" aria-live="polite">
+            <span class="connection-dot"></span>
+            <span id="connection-label">Connecting</span>
+          </div>
+
+          <!-- Replay Intro Splash Button -->
+          <button class="nav-action-btn" id="replay-intro-btn" type="button" title="View Welcome Intro" aria-label="View Welcome Intro">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span class="action-btn-text">Intro</span>
+          </button>
+
+          <!-- Theme Toggle Button -->
+          <button class="icon-button" id="theme-toggle-btn" type="button" aria-label="Toggle Theme" title="Toggle color theme">
+            <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+
+          <!-- Refresh Dashboard Button -->
+          <button class="icon-button refresh-btn" id="refresh-button" type="button" aria-label="Refresh dashboard" title="Refresh dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 7v5h-5M4 17v-5h5"/>
+              <path d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 
+    <!-- Main Dashboard Container -->
     <main id="main" class="dashboard">
+      <!-- Page Heading & Tank Selector -->
       <section class="page-heading reveal" aria-labelledby="page-title">
-        <div>
-          <p class="eyebrow">AQUASENSE · FIELD SYSTEMS</p>
-          <h1 id="page-title">Water, in balance.</h1>
-          <p class="page-subtitle">A live pulse on your tank, with every reading in view.</p>
+        <div class="heading-content">
+          <div class="eyebrow-wrapper">
+            <span class="live-dot-beacon"></span>
+            <p class="eyebrow">AQUASENSE · TELEMETRY FIELD NODE</p>
+          </div>
+          <h1 id="page-title">Water, in <span class="title-shimmer">balance.</span></h1>
+          <p class="page-subtitle">Continuous high-precision capacity monitoring, safety alerts, and hydraulic history.</p>
         </div>
-        <div class="tank-selector" aria-label="Selected tank">
-          <span class="tank-icon" aria-hidden="true">⌖</span>
-          <span><strong>Storage tank</strong><small>Device · tank-001</small></span>
-          <span class="selector-chevron" aria-hidden="true">⌄</span>
+
+        <div class="tank-selector-card" aria-label="Selected tank info">
+          <div class="tank-icon-wrap" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6c0-1.657 3.582-3 8-3s8 1.343 8 3v12c0 1.657-3.582 3-8 3s-8-1.343-8-3V6z"/>
+              <ellipse cx="12" cy="6" rx="8" ry="3"/>
+              <path d="M4 12c0 1.657 3.582 3 8 3s8-1.343 8-3"/>
+            </svg>
+          </div>
+          <div class="tank-info">
+            <div class="tank-title-row">
+              <strong>Main Storage Tank</strong>
+              <span class="online-tag">Online</span>
+            </div>
+            <small>Field Device · <code>tank-001</code></small>
+          </div>
         </div>
       </section>
 
+      <!-- Dynamic State Banners -->
       <div class="state-banner loading-banner" id="loading-state" role="status" hidden>
-        <span class="spinner" aria-hidden="true"></span><span>Loading your latest tank data…</span>
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Synchronizing with AquaSense telemetry stream…</span>
       </div>
+
       <div class="state-banner error-banner" id="error-state" role="alert" hidden>
         <span class="state-icon" aria-hidden="true">!</span>
-        <span><strong>We couldn’t load tank data.</strong> <span id="error-message">Check that the AquaSense API is running, then try again.</span></span>
-        <button class="text-button" id="retry-button" type="button">Try again</button>
+        <div class="error-text-wrap">
+          <strong>Unable to retrieve tank data.</strong>
+          <span id="error-message">Check that the AquaSense API service is active, then retry.</span>
+        </div>
+        <button class="retry-pill-btn" id="retry-button" type="button">Try again</button>
       </div>
 
+      <!-- ========================================================
+           METRIC SUMMARY CARDS
+           ======================================================== -->
       <section class="metric-grid" id="metric-grid" aria-label="Tank metrics" aria-busy="true">
+        <!-- PRIMARY LEVEL CARD WITH DUAL LIQUID VISUALIZERS -->
         <article class="card level-card reveal">
-          <div class="card-heading"><div><p class="card-label">CURRENT LEVEL</p><p class="card-context">Live tank capacity</p></div><span class="status-chip" id="level-status">—</span></div>
-          <div class="level-content">
-            <div class="level-gauge" id="level-gauge" role="img" aria-label="Current tank level" style="--level-angle: 0deg">
-              <div class="gauge-inner"><span class="gauge-value" id="current-level">—</span><span class="gauge-unit">percent full</span></div>
+          <div class="card-ambient-glow" aria-hidden="true"></div>
+          
+          <div class="card-heading">
+            <div>
+              <p class="card-label">CURRENT LEVEL</p>
+              <p class="card-context">Live reservoir capacity</p>
             </div>
-            <div class="level-details"><div class="detail-row"><span class="detail-dot current-dot"></span><span>Current</span><strong id="current-caption">—</strong></div><div class="detail-row"><span class="detail-dot threshold-dot"></span><span>Low threshold</span><strong>20%</strong></div></div>
+            <span class="status-chip" id="level-status">—</span>
           </div>
-          <div class="card-footer"><span class="footer-icon" aria-hidden="true">↻</span>Last updated <strong id="last-updated">—</strong></div>
+
+          <div class="level-content">
+            <!-- Circular Radial Gauge -->
+            <div class="gauge-column">
+              <div class="level-gauge" id="level-gauge" role="img" aria-label="Current tank level" style="--level-angle: 0deg">
+                <div class="gauge-inner">
+                  <span class="gauge-value" id="current-level">—</span>
+                  <span class="gauge-unit">percent capacity</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vertical Animated Liquid Tank Cylinder -->
+            <div class="fluid-tank-column" aria-hidden="true">
+              <div class="liquid-cylinder" id="liquid-tank-visualizer">
+                <!-- Measurement ticks -->
+                <div class="cylinder-ticks">
+                  <span class="tick" style="top: 0%">100%</span>
+                  <span class="tick" style="top: 25%">75%</span>
+                  <span class="tick" style="top: 50%">50%</span>
+                  <span class="tick alert-tick" style="top: 80%">20%</span>
+                  <span class="tick" style="top: 100%">0%</span>
+                </div>
+                
+                <!-- 20% Safety threshold line indicator -->
+                <div class="tank-threshold-mark" style="bottom: 20%" title="Low threshold 20%">
+                  <span class="thresh-line"></span>
+                  <span class="thresh-pill">20% LOW</span>
+                </div>
+
+                <!-- Animated Liquid Fill -->
+                <div class="tank-liquid" id="tank-liquid-fill" style="height: 0%">
+                  <!-- Animated Water Wave Top -->
+                  <div class="wave-container">
+                    <svg class="liquid-wave wave-front" viewBox="0 0 200 20" preserveAspectRatio="none">
+                      <path d="M 0,10 C 30,0 70,20 100,10 C 130,0 170,20 200,10 L 200,20 L 0,20 Z"/>
+                    </svg>
+                    <svg class="liquid-wave wave-back" viewBox="0 0 200 20" preserveAspectRatio="none">
+                      <path d="M 0,12 C 40,22 80,2 120,12 C 160,22 180,5 200,12 L 200,20 L 0,20 Z"/>
+                    </svg>
+                  </div>
+                  <!-- Floating bubbles inside water -->
+                  <div class="bubble bubble-1"></div>
+                  <div class="bubble bubble-2"></div>
+                  <div class="bubble bubble-3"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quantitative Detail Column -->
+            <div class="level-details">
+              <div class="detail-row">
+                <span class="detail-dot current-dot"></span>
+                <span>Active Reading</span>
+                <strong id="current-caption">—</strong>
+              </div>
+              <div class="detail-row">
+                <span class="detail-dot threshold-dot"></span>
+                <span>Safety Floor</span>
+                <strong>20% minimum</strong>
+              </div>
+              <div class="detail-row">
+                <span class="detail-dot status-dot" id="system-health-dot"></span>
+                <span>System Status</span>
+                <strong id="system-health-text">Monitoring</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span class="footer-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+            </span>
+            <span>Last sample received <strong id="last-updated">—</strong></span>
+          </div>
         </article>
 
-        <article class="card stat-card reveal">
-          <div class="stat-top"><span class="stat-icon min-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M7 12h10m-7 5h4"/><path d="M5 4v16"/></svg></span><span class="stat-period">TODAY</span></div>
-          <p class="card-label">MINIMUM LEVEL</p><div class="stat-value" id="minimum-level">—<span>%</span></div>
-          <p class="stat-description">Lowest recorded tank level</p>
+        <!-- MINIMUM LEVEL STAT CARD -->
+        <article class="card stat-card min-stat-card reveal">
+          <div class="card-ambient-glow" aria-hidden="true"></div>
+          <div class="stat-top">
+            <span class="stat-icon min-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12l7 7 7-7"/>
+              </svg>
+            </span>
+            <span class="stat-period">RECORDED TODAY</span>
+          </div>
+          <p class="card-label">MINIMUM LEVEL</p>
+          <div class="stat-value" id="minimum-level">—<span>%</span></div>
+          <p class="stat-description">Lowest recorded capacity during this operational window</p>
           <div class="stat-accent min-accent"></div>
         </article>
 
-        <article class="card stat-card reveal">
-          <div class="stat-top"><span class="stat-icon max-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17h16M7 12h10m-7-5h4"/><path d="M19 4v16"/></svg></span><span class="stat-period">TODAY</span></div>
-          <p class="card-label">MAXIMUM LEVEL</p><div class="stat-value" id="maximum-level">—<span>%</span></div>
-          <p class="stat-description">Highest recorded tank level</p>
+        <!-- MAXIMUM LEVEL STAT CARD -->
+        <article class="card stat-card max-stat-card reveal">
+          <div class="card-ambient-glow" aria-hidden="true"></div>
+          <div class="stat-top">
+            <span class="stat-icon max-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+            </span>
+            <span class="stat-period">RECORDED TODAY</span>
+          </div>
+          <p class="card-label">MAXIMUM LEVEL</p>
+          <div class="stat-value" id="maximum-level">—<span>%</span></div>
+          <p class="stat-description">Peak reservoir level reached during current logging period</p>
           <div class="stat-accent max-accent"></div>
         </article>
       </section>
 
+      <!-- ========================================================
+           TELEMETRY CHART & EVENT TIMELINES
+           ======================================================== -->
       <section class="content-grid">
+        <!-- SVG Interactive Level History Chart -->
         <article class="card chart-card reveal">
-          <div class="section-heading"><div><p class="card-label">TANK PERFORMANCE</p><h2>Level history</h2><p class="section-subtitle">Readings over time · percentage of capacity</p></div><div class="chart-legend"><span><i class="legend-reading"></i>Tank level</span><span><i class="legend-threshold"></i>20% threshold</span></div></div>
+          <div class="card-ambient-glow" aria-hidden="true"></div>
+          
+          <div class="section-heading">
+            <div>
+              <p class="card-label">HYDRAULIC TELEMETRY</p>
+              <h2>Level history &amp; trajectory</h2>
+              <p class="section-subtitle">Chronological sensor readings across capacity threshold</p>
+            </div>
+            <div class="chart-legend">
+              <span class="legend-item"><i class="legend-reading"></i> Tank capacity</span>
+              <span class="legend-item"><i class="legend-threshold"></i> 20% critical threshold</span>
+            </div>
+          </div>
+
           <div class="chart-wrap" id="chart-wrap">
             <svg id="history-chart" class="history-chart" role="img" aria-labelledby="chart-title chart-desc" viewBox="0 0 760 280" preserveAspectRatio="none">
-              <title id="chart-title">Tank level history</title><desc id="chart-desc">Tank readings over time with a 20 percent low-level threshold.</desc>
-              <g id="chart-grid"></g><g id="chart-threshold"></g><g id="chart-area"></g><g id="chart-line"></g><g id="chart-points"></g><g id="chart-labels"></g>
+              <title id="chart-title">Tank level history</title>
+              <desc id="chart-desc">Chronological water level readings plotted against a 20 percent threshold line.</desc>
+              <g id="chart-grid"></g>
+              <g id="chart-threshold"></g>
+              <g id="chart-area"></g>
+              <g id="chart-line"></g>
+              <g id="chart-points"></g>
+              <g id="chart-labels"></g>
             </svg>
-            <div class="chart-empty" id="chart-empty" hidden>Not enough readings to draw a history yet.</div>
+            
+            <!-- Tooltip for interactive point hover -->
+            <div class="chart-tooltip" id="chart-tooltip" hidden>
+              <span class="tooltip-time" id="tooltip-time">Time</span>
+              <strong class="tooltip-val" id="tooltip-val">--%</strong>
+            </div>
+
+            <div class="chart-empty" id="chart-empty" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span>Awaiting telemetry points to render chart history…</span>
+            </div>
           </div>
         </article>
 
+        <!-- Alerts and Incident Event Log Column -->
         <aside class="side-column" aria-label="Tank alerts and events">
+          <!-- Active Alerts Card -->
           <article class="card alert-card reveal">
-            <div class="section-heading compact-heading"><div><p class="card-label">LIVE MONITORING</p><h2>Active alerts</h2></div><span class="count-badge" id="active-count">0</span></div>
-            <div class="alert-content" id="active-alerts" aria-live="polite"><div class="empty-state"><span class="empty-check" aria-hidden="true">✓</span><div><strong>All clear</strong><p>No active tank alerts right now.</p></div></div></div>
+            <div class="card-ambient-glow" aria-hidden="true"></div>
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="card-label">SAFETY MONITORING</p>
+                <h2>Active alerts</h2>
+              </div>
+              <span class="count-badge" id="active-count">0</span>
+            </div>
+            <div class="alert-content" id="active-alerts" aria-live="polite">
+              <div class="empty-state">
+                <span class="empty-check" aria-hidden="true">✓</span>
+                <div>
+                  <strong>All systems nominal</strong>
+                  <p>Tank capacity is within safe operational thresholds.</p>
+                </div>
+              </div>
+            </div>
           </article>
+
+          <!-- Historical Low Level Events -->
           <article class="card events-card reveal">
-            <div class="section-heading compact-heading"><div><p class="card-label">PAST READINGS</p><h2>Low-level events</h2></div><span class="count-badge muted-badge" id="event-count">0</span></div>
-            <div class="event-list" id="historical-events"><div class="event-empty">No historical low-level events.</div></div>
+            <div class="card-ambient-glow" aria-hidden="true"></div>
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="card-label">AUDIT LOG</p>
+                <h2>Low-level events</h2>
+              </div>
+              <span class="count-badge muted-badge" id="event-count">0</span>
+            </div>
+            <div class="event-list" id="historical-events">
+              <div class="event-empty">No historical threshold violations logged.</div>
+            </div>
           </article>
         </aside>
       </section>
 
-      <footer class="dashboard-footer reveal"><span><span class="footer-live-dot"></span> Connected to AquaSense API</span><span>Low-level threshold <strong>20%</strong></span></footer>
+      <!-- Dashboard Footer -->
+      <footer class="dashboard-footer reveal">
+        <div class="footer-left">
+          <span class="footer-live-dot"></span>
+          <span>AquaSense Telemetry Engine · Device <code>tank-001</code></span>
+        </div>
+        <div class="footer-right">
+          <span>Safety Threshold: <strong>20% Critical Floor</strong></span>
+          <span class="footer-sep">·</span>
+          <span>FastAPI Microservice Status: <strong class="api-ok-badge">Operational</strong></span>
+        </div>
+      </footer>
     </main>
   </div>
 </body>

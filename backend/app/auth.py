@@ -1,12 +1,13 @@
 """Mock authentication helpers for the AquaSense assignment."""
 
+import os
 from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 
-# Deliberately fixed credentials/token for a local mock API, not production auth.
-MOCK_USERNAME = "demo"
-MOCK_PASSWORD = "aqua123"
-MOCK_TOKEN = "aquasense-demo-token"
+# Default mock credentials, configurable via environment variables
+MOCK_USERNAME = os.getenv("AQUASENSE_USERNAME", "demo")
+MOCK_PASSWORD = os.getenv("AQUASENSE_PASSWORD", "aqua123")
+MOCK_TOKEN = os.getenv("AQUASENSE_TOKEN", "aquasense-demo-token")
 
 
 def authenticate(username: str, password: str) -> str:
