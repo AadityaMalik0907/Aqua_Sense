@@ -3,12 +3,12 @@
     {
       "id": "tank-001",
       "online": true,
-      "last_seen": "2026-11-04T12:00:00+05:30"
+      "last_seen": "2026-11-02T20:00:00+05:30"
     },
     {
       "id": "device-offline",
       "online": false,
-      "last_seen": "2026-11-04T11:55:00+05:30"
+      "last_seen": "2026-11-02T19:55:00+05:30"
     },
     {
       "id": "device-stale",
@@ -17,9 +17,13 @@
     }
   ],
   "tank_readings": [
-    { "timestamp": "2026-11-04T14:00:00+05:30", "level": 78 },
-    { "timestamp": "2026-11-04T16:00:00+05:30", "level": 18 },
-    { "timestamp": "2026-11-04T17:00:00+05:30", "level": 35 },
-    { "timestamp": "2026-11-04T18:00:00+05:30", "level": 55 }
+    { "timestamp": "2026-11-02T06:00:00+05:30", "level": 78, "level_percent": 78 },
+    { "timestamp": "2026-11-02T08:00:00+05:30", "level": 64, "level_percent": 64 },
+    { "timestamp": "2026-11-02T10:00:00+05:30", "level": 51, "level_percent": 51 },
+    { "timestamp": "2026-11-02T12:00:00+05:30", "level": 37, "level_percent": 37 },
+    { "timestamp": "2026-11-02T14:00:00+05:30", "level": 24, "level_percent": 24 },
+    { "timestamp": "2026-11-02T16:00:00+05:30", "level": 18, "level_percent": 18 },
+    { "timestamp": "2026-11-02T18:00:00+05:30", "level": 42, "level_percent": 42 },
+    { "timestamp": "2026-11-02T20:00:00+05:30", "level": 55, "level_percent": 55 }
   ]
 }

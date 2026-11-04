@@ -1,9 +1,11 @@
 """Automated API tests for AquaSense device status endpoint."""
 
+from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 from backend.app.main import app
+from backend.app.time_utils import get_current_utc_time
 
 client = TestClient(app)
 VALID_AUTH_HEADER = {"Authorization": "Bearer aquasense-demo-token"}
@@ -11,16 +13,23 @@ INVALID_AUTH_HEADER = {"Authorization": "Bearer invalid-token-xyz"}
 
 
 def test_device_status_valid_token():
-    """Scenario 3: Access device status with a valid token."""
-    response = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
-    
-    assert response.status_code == 200
-    body = response.json()
-    assert body["id"] == "tank-001"
-    assert body["online"] is True
-    assert body["status"] == "online"
-    assert body["is_stale"] is False
-    assert "last_seen" in body
+    """Scenario 3: Access device status with a valid token (deterministic via dynamic fresh timestamp)."""
+    now_utc = get_current_utc_time()
+    fresh_record = {
+        "id": "tank-001",
+        "online": True,
+        "last_seen": (now_utc - timedelta(minutes=10)).isoformat(),
+    }
+    with patch("backend.app.main.get_device", return_value=fresh_record):
+        response = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        
+        assert response.status_code == 200
+        body = response.json()
+        assert body["id"] == "tank-001"
+        assert body["online"] is True
+        assert body["status"] == "online"
+        assert body["is_stale"] is False
+        assert "last_seen" in body
 
 
 def test_device_status_invalid_token():
@@ -93,13 +102,53 @@ def test_device_status_malformed_timestamp():
 
 
 def test_device_status_stale_timestamp():
-    """Scenario 9: Handle stale last_seen timestamps older than 24 hours."""
-    response = client.get("/device/device-stale/status", headers=VALID_AUTH_HEADER)
-    
-    assert response.status_code == 200
-    body = response.json()
-    assert body["id"] == "device-stale"
-    assert body["online"] is True
-    assert body["is_stale"] is True
-    assert body["status"] == "stale"
-    assert "last_seen" in body
+    """Scenario 9: Handle stale last_seen timestamps older than 24 hours deterministically."""
+    now_utc = get_current_utc_time()
+    stale_record = {
+        "id": "device-stale",
+        "online": True,
+        "last_seen": (now_utc - timedelta(hours=25)).isoformat(),
+    }
+    with patch("backend.app.main.get_device", return_value=stale_record):
+        response = client.get("/device/device-stale/status", headers=VALID_AUTH_HEADER)
+        
+        assert response.status_code == 200
+        body = response.json()
+        assert body["id"] == "device-stale"
+        assert body["online"] is True
+        assert body["is_stale"] is True
+        assert body["status"] == "stale"
+        assert "last_seen" in body
+
+
+def test_device_status_future_beyond_tolerance_rejected():
+    """Reject device last_seen timestamp more than 5 minutes in the future."""
+    now_utc = get_current_utc_time()
+    future_record = {
+        "id": "device-future",
+        "online": True,
+        "last_seen": (now_utc + timedelta(minutes=10)).isoformat(),
+    }
+    with patch("backend.app.main.get_device", return_value=future_record):
+        response = client.get("/device/device-future/status", headers=VALID_AUTH_HEADER)
+        
+        assert response.status_code == 400
+        body = response.json()
+        assert "future" in body["detail"].lower()
+
+
+def test_device_status_future_within_tolerance_accepted():
+    """Accept device last_seen timestamp within the 5-minute future tolerance."""
+    now_utc = get_current_utc_time()
+    slight_future_record = {
+        "id": "device-slight-future",
+        "online": True,
+        "last_seen": (now_utc + timedelta(minutes=2)).isoformat(),
+    }
+    with patch("backend.app.main.get_device", return_value=slight_future_record):
+        response = client.get("/device/device-slight-future/status", headers=VALID_AUTH_HEADER)
+        
+        assert response.status_code == 200
+        body = response.json()
+        assert body["online"] is True
+        assert body["is_stale"] is False

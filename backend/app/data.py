@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
+
 def _resolve_data_file() -> Path:
     primary = Path(__file__).resolve().parents[2] / "data" / "mock_data.json"
     if primary.exists():
@@ -14,6 +15,7 @@ def _resolve_data_file() -> Path:
     if cwd_candidate.exists():
         return cwd_candidate
     return primary
+
 
 DATA_FILE = _resolve_data_file()
 
@@ -44,12 +46,14 @@ def get_device(device_id: str) -> dict[str, Any]:
 def tank_readings() -> list[dict[str, Any]]:
     """Return readings after checking the JSON structure and level bounds."""
     readings = load_data().get("tank_readings")
-    if not isinstance(readings, list) or not readings:
+    if not isinstance(readings, list):
         raise HTTPException(status_code=500, detail="Mock data has no tank readings")
     for reading in readings:
-        if not isinstance(reading, dict) or "level" not in reading or "timestamp" not in reading:
+        if not isinstance(reading, dict) or "timestamp" not in reading:
             raise HTTPException(status_code=500, detail="Malformed tank reading")
-        level = reading["level"]
+        if "level" not in reading and "level_percent" not in reading:
+            raise HTTPException(status_code=500, detail="Malformed tank reading")
+        level = reading.get("level") if "level" in reading else reading.get("level_percent")
         if isinstance(level, bool) or not isinstance(level, (int, float)) or not 0 <= level <= 100:
             raise HTTPException(status_code=500, detail="Tank reading level must be between 0 and 100")
     return readings
