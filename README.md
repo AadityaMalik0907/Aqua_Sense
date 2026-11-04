@@ -233,8 +233,26 @@ _Note_: The current repository provides a responsive web dashboard; native mobil
 ## AI Usage
 
 - **Tool Used**: Google Antigravity coding assistant (powered by Claude 3.7 Sonnet and Gemini 3.8 Flash).
-- **Prompt 1**: *"Implement Phase 1 of the AquaSense assignment... make the backend fully compliant with the original Nivoryx assignment while preserving existing working functionality... GET /device/{id}/status response must include: level_percent, pump_state: 'on' or 'off', last_seen: timestamp."*
-- **Prompt 2**: *"Implement Phase 2 of AquaSense: Frontend Dashboard Correctness and Reliability... The dashboard must display: Current tank level, Minimum tank level, Maximum tank level, Last reading timestamp... Distinguish active alerts based on the latest reading from historical low-level events."*
+- **Prompt 1 (Backend Implementation)**:
+  > _"Inspect the existing AquaSense repository and implement the backend requirements of the Nivoryx assignment. First, review the existing architecture, API endpoints, data models, mock data, and tests before making changes._
+  > 
+  > _Ensure that:_
+  > _- Tank readings are validated and current, minimum, and maximum levels are calculated correctly._
+  > _- Low-level alerts trigger only when the latest reading is below 20%, with historical low-level events tracked separately._
+  > _- POST /login provides token-based authentication._
+  > _- GET /device/{id}/status returns level_percent, pump_state ("on" or "off"), and last_seen._
+  > _- Invalid tokens, unknown devices, offline devices, stale timestamps, malformed data, and missing fields are handled correctly._
+  > _- Empty telemetry is distinguished from an actual 0% tank level._
+  > 
+  > _Preserve existing functionality and API compatibility. Add or update automated tests, including at least four tests using mocked API responses. Run the test suite, fix implementation-related failures, and report the actual results. Do not fabricate data, introduce unnecessary changes, or claim unverified functionality."_
+- **Prompt 2 (Frontend Dashboard)**:
+  > _"Inspect the existing AquaSense frontend and implement the dashboard requirements of the Nivoryx assignment. Ensure the dashboard accurately displays the current tank level, minimum level, maximum level, last reading timestamp, and historical readings using validated backend data._
+  > 
+  > _Implement correct alert handling: readings below 20% trigger an active alert only when they are the latest reading. Historical low-level events must be displayed separately and must not be mistaken for active alerts._
+  > 
+  > _Ensure the dashboard handles stale telemetry, offline devices, API failures, invalid responses, empty readings, and network interruptions without displaying fabricated or misleading values. Preserve the existing design and responsive behaviour while improving reliability and usability._
+  > 
+  > _Verify that the supplied mock data produces a current level of 55%, minimum of 18%, maximum of 78%, and no active alert. Add or update relevant automated tests, run the available test suite, and report actual results and any remaining issues. Avoid unnecessary redesigns or changes to working functionality."_
 - **Genuine Mistake & Correction**: The AI initially used index-based spacing (`index / (N - 1)`) for the SVG chart X-axis, distorting irregular timestamp intervals, and inserted dynamic data via `innerHTML`. This was caught during code inspection and corrected by implementing linear epoch millisecond geometry `left + ((t - min_t) / (max_t - min_t)) * plotWidth` and replacing `innerHTML` with safe DOM methods (`document.createElement()`, `textContent`).
 
 A detailed chronology and prompt history is recorded in [`docs/ai_usage.md`](docs/ai_usage.md).

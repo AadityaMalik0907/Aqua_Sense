@@ -3,8 +3,26 @@
 ## 1. Assignment AI Usage Note (Concise Submission Note)
 
 1. **Tool Used**: Google Antigravity coding assistant (powered by Claude 3.7 Sonnet and Gemini 3.8 Flash).
-2. **Prompt 1**: *"Implement Phase 1 of the AquaSense assignment... make the backend fully compliant with the original Nivoryx assignment while preserving existing working functionality... GET /device/{id}/status response must include: level_percent, pump_state: 'on' or 'off', last_seen: timestamp."*
-3. **Prompt 2**: *"Implement Phase 2 of AquaSense: Frontend Dashboard Correctness and Reliability... The dashboard must display: Current tank level, Minimum tank level, Maximum tank level, Last reading timestamp... Distinguish active alerts based on the latest reading from historical low-level events."*
+2. **Prompt 1 (Backend Implementation)**:
+   > _"Inspect the existing AquaSense repository and implement the backend requirements of the Nivoryx assignment. First, review the existing architecture, API endpoints, data models, mock data, and tests before making changes._
+   > 
+   > _Ensure that:_
+   > _- Tank readings are validated and current, minimum, and maximum levels are calculated correctly._
+   > _- Low-level alerts trigger only when the latest reading is below 20%, with historical low-level events tracked separately._
+   > _- POST /login provides token-based authentication._
+   > _- GET /device/{id}/status returns level_percent, pump_state ("on" or "off"), and last_seen._
+   > _- Invalid tokens, unknown devices, offline devices, stale timestamps, malformed data, and missing fields are handled correctly._
+   > _- Empty telemetry is distinguished from an actual 0% tank level._
+   > 
+   > _Preserve existing functionality and API compatibility. Add or update automated tests, including at least four tests using mocked API responses. Run the test suite, fix implementation-related failures, and report the actual results. Do not fabricate data, introduce unnecessary changes, or claim unverified functionality."_
+3. **Prompt 2 (Frontend Dashboard)**:
+   > _"Inspect the existing AquaSense frontend and implement the dashboard requirements of the Nivoryx assignment. Ensure the dashboard accurately displays the current tank level, minimum level, maximum level, last reading timestamp, and historical readings using validated backend data._
+   > 
+   > _Implement correct alert handling: readings below 20% trigger an active alert only when they are the latest reading. Historical low-level events must be displayed separately and must not be mistaken for active alerts._
+   > 
+   > _Ensure the dashboard handles stale telemetry, offline devices, API failures, invalid responses, empty readings, and network interruptions without displaying fabricated or misleading values. Preserve the existing design and responsive behaviour while improving reliability and usability._
+   > 
+   > _Verify that the supplied mock data produces a current level of 55%, minimum of 18%, maximum of 78%, and no active alert. Add or update relevant automated tests, run the available test suite, and report actual results and any remaining issues. Avoid unnecessary redesigns or changes to working functionality."_
 4. **Genuine Mistake**: The AI initially used array index-based spacing (`index / (N - 1)`) for the SVG chart X-axis coordinates and concatenated unescaped strings into `innerHTML`. In Phase 3 tests, it also asserted a generic `"invalid tank reading"` string instead of asserting `data.py`'s exact exception message (`"Malformed tank reading"`).
 5. **How Identified**: Code inspection revealed that irregular timestamp intervals (e.g., 06:00, 06:30, 20:00) were placed at equal intervals rather than proportionally, security review flagged dynamic `innerHTML`, and running `pytest -v` failed on the specific error message mismatch.
 6. **How Corrected**: Replaced index-based positioning with linear epoch millisecond math `left + ((time - minTime) / (maxTime - minTime)) * plotWidth`, eliminated all `innerHTML` in favor of safe DOM methods (`document.createElement()`, `textContent`, `append()`), and updated test assertions to check exact domain error strings.
