@@ -1,295 +1,149 @@
-# AquaSense - Test Cases & Automated Verification Report
+# AquaSense - Automated Test Cases & QA Verification Register
 
-This document records the automated test cases designed and executed for the AquaSense API using `pytest` and FastAPI's `TestClient`. All test cases were executed against the local test harness and verified without requiring physical IoT hardware or external network calls.
+This document provides a record of all **92 automated test cases** designed, executed, and verified for the AquaSense platform. All tests run deterministically against the FastAPI backend, Pydantic schemas, and frontend mathematical engines without requiring physical IoT sensors or external cloud dependencies.
 
 ---
 
-## Test Execution Summary
+## 1. Test Execution Summary
 
-- **Total Test Cases**: 16
-- **Passed**: 16
+- **Total Test Cases**: 92
+- **Passed**: 92 (100%)
 - **Failed**: 0
+- **Skipped**: 0
+- **Backend Code Coverage**: 100% (213/213 statements)
 - **Execution Date**: 2026-11-04
-- **Test Runner**: `pytest` 9.2.0 / `TestClient` (Starlette/HTTPX) on Python 3.15.2 (Windows)
+- **Test Harness**: `pytest` 9.2.0, `pytest-cov` 7.1.0, `FastAPI TestClient` (Starlette/HTTPX) on Python 3.15.2 (Windows 11)
 
 ---
 
-## Detailed Test Cases
+## 2. Category 1: User Authentication (`tests/test_login.py`)
 
-### TC-001: Successful User Authentication
-- **Test ID**: `TC-001`
-- **Description**: Verify that providing valid mock credentials returns a valid Bearer access token.
-- **Preconditions**: AquaSense FastAPI server is initialized with mock authentication service.
-- **Input**:
-  - Method: `POST`
-  - URL: `/login`
-  - Headers: `Content-Type: application/json`
-  - Body: `{"username": "demo", "password": "aqua123"}`
-- **Expected Result**:
-  - Status Code: `200 OK`
-  - Body: `{"access_token": "aquasense-demo-token", "token_type": "bearer"}`
-- **Actual Result**:
-  - Status Code: `200 OK`
-  - Body: `{"access_token": "aquasense-demo-token", "token_type": "bearer"}`
-- **Status**: **PASS**
+| Test ID | Test Description | Preconditions | Input (Method, URL, Body) | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-AUTH-001** | Successful login with valid credentials | FastAPI server running with mock auth | `POST /login`<br>`{"username": "demo", "password": "aqua123"}` | `200 OK`, `access_token: "aquasense-demo-token"`, `token_type: "bearer"` | `200 OK`, valid bearer token returned | **PASS** |
+| **TC-AUTH-002** | Login failure with invalid password | Server running | `POST /login`<br>`{"username": "demo", "password": "wrongpassword"}` | `401 Unauthorized`<br>`{"detail": "Invalid username or password"}` | `401 Unauthorized`, WWW-Authenticate header set | **PASS** |
+| **TC-AUTH-003** | Login failure with invalid username | Server running | `POST /login`<br>`{"username": "unknown_operator", "password": "aqua123"}` | `401 Unauthorized`<br>`{"detail": "Invalid username or password"}` | `401 Unauthorized`, exact error message | **PASS** |
+| **TC-AUTH-004** | Missing username field | Server running | `POST /login`<br>`{"password": "aqua123"}` | `422 Unprocessable Entity`<br>Location `["body", "username"]` | `422 Unprocessable Entity`, location verified | **PASS** |
+| **TC-AUTH-005** | Missing password field | Server running | `POST /login`<br>`{"username": "demo"}` | `422 Unprocessable Entity`<br>Location `["body", "password"]` | `422 Unprocessable Entity`, location verified | **PASS** |
+| **TC-AUTH-006** | Empty object payload | Server running | `POST /login`<br>`{}` | `422 Unprocessable Entity`<br>Validation errors for both fields | `422 Unprocessable Entity`, both fields flagged | **PASS** |
+| **TC-AUTH-007** | Empty string username (`""`) | Server running | `POST /login`<br>`{"username": "", "password": "aqua123"}` | `422 Unprocessable Entity`<br>Violates `min_length=1` | `422 Unprocessable Entity`, min_length enforced | **PASS** |
+| **TC-AUTH-008** | Empty string password (`""`) | Server running | `POST /login`<br>`{"username": "demo", "password": ""}` | `422 Unprocessable Entity`<br>Violates `min_length=1` | `422 Unprocessable Entity`, min_length enforced | **PASS** |
+| **TC-AUTH-009** | Malformed data types (int/null) | Server running | `POST /login`<br>`{"username": 12345, "password": null}` | `422 Unprocessable Entity`<br>Type mismatch errors | `422 Unprocessable Entity`, type errors flagged | **PASS** |
+| **TC-AUTH-010** | Non-string username (array) | Server running | `POST /login`<br>`{"username": ["demo"], "password": "aqua123"}` | `422 Unprocessable Entity`<br>String constraint violation | `422 Unprocessable Entity`, array rejected | **PASS** |
+| **TC-AUTH-011** | Raw non-JSON payload | Server running | `POST /login`<br>`Content: "raw-unformatted-string"` | `422 Unprocessable Entity`<br>Invalid JSON decoding | `422 Unprocessable Entity`, raw text rejected | **PASS** |
 
 ---
 
-### TC-002: Login with Invalid Password
-- **Test ID**: `TC-002`
-- **Description**: Verify that providing an incorrect password rejects authentication with HTTP 401.
-- **Preconditions**: Server is running.
-- **Input**:
-  - Method: `POST`
-  - URL: `/login`
-  - Headers: `Content-Type: application/json`
-  - Body: `{"username": "demo", "password": "wrongpassword"}`
-- **Expected Result**:
-  - Status Code: `401 Unauthorized`
-  - Body: `{"detail": "Invalid username or password"}`
-- **Actual Result**:
-  - Status Code: `401 Unauthorized`
-  - Body: `{"detail": "Invalid username or password"}`
-- **Status**: **PASS**
+## 3. Category 2: Device Hardware Telemetry (`tests/test_device_status.py`)
+
+| Test ID | Test Description | Preconditions | Input (Method, URL, Headers) | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-DEV-001** | Device status with valid token | Device `tank-001` fresh | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `200 OK`, `online: true`, `status: "online"`, `is_stale: false` | `200 OK`, `level_percent: 55.0`, `pump_state: "off"` | **PASS** |
+| **TC-DEV-002** | Device status with invalid token | Server running | `GET /device/tank-001/status`<br>`Bearer invalid-token-xyz` | `401 Unauthorized`<br>`{"detail": "Invalid bearer token"}` | `401 Unauthorized`, detail verified | **PASS** |
+| **TC-DEV-003** | Device status missing token | Server running | `GET /device/tank-001/status`<br>No auth header | `401 Unauthorized`<br>`{"detail": "Bearer token required"}` | `401 Unauthorized`, header enforced | **PASS** |
+| **TC-DEV-004** | Nonexistent device ID | Server running | `GET /device/nonexistent-device-999/status`<br>`Bearer aquasense-demo-token` | `404 Not Found`<br>`{"detail": "Device not found"}` | `404 Not Found`, device not found | **PASS** |
+| **TC-DEV-005** | Offline hardware device | Device `device-offline` with `online: false` | `GET /device/device-offline/status`<br>`Bearer aquasense-demo-token` | `503 Service Unavailable`<br>`{"detail": {"message": "Device is offline", "device_id": "device-offline"}}` | `503 Service Unavailable`, exact detail returned | **PASS** |
+| **TC-DEV-006** | Malformed record (`online` not bool) | Device record has `"online": "not-a-bool"` | `GET /device/device-malformed/status`<br>`Bearer aquasense-demo-token` | `500 Internal Server Error`<br>`{"detail": "Device record is malformed"}` | `500 Internal Server Error`, malformed caught | **PASS** |
+| **TC-DEV-007** | Malformed timestamp string | Device record has unparseable `last_seen` | `GET /device/device-bad-date/status`<br>`Bearer aquasense-demo-token` | `500 Internal Server Error`<br>`{"detail": "Device last_seen is malformed"}` | `500 Internal Server Error`, bad date caught | **PASS** |
+| **TC-DEV-008** | Missing `last_seen` attribute | Device record omits `last_seen` | `GET /device/device-missing-last-seen/status`<br>`Bearer aquasense-demo-token` | `500 Internal Server Error`<br>`{"detail": "Device record is malformed"}` | `500 Internal Server Error`, missing key caught | **PASS** |
+| **TC-DEV-009** | Stale device timestamp (>24h) | Device last seen 25 hours ago | `GET /device/device-stale/status`<br>`Bearer aquasense-demo-token` | `200 OK`, `is_stale: true`, `status: "stale"`, `online: true` | `200 OK`, correctly flagged stale | **PASS** |
+| **TC-DEV-010** | Future timestamp beyond 5m tolerance | Device last seen 10m in future | `GET /device/device-future/status`<br>`Bearer aquasense-demo-token` | `400 Bad Request`<br>Contains `"future"` in detail | `400 Bad Request`, future drift rejected | **PASS** |
+| **TC-DEV-011** | Future timestamp within 5m tolerance | Device last seen 2m in future | `GET /device/device-slight-future/status`<br>`Bearer aquasense-demo-token` | `200 OK`, `is_stale: false`, `online: true` | `200 OK`, clock drift tolerated | **PASS** |
+| **TC-DEV-012** | Exact response contract schema | Device record with `level_percent: 72.5`, `pump_state: "on"` | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `200 OK`, exact key set: `{"id", "online", "status", "last_seen", "is_stale", "level_percent", "pump_state"}` | `200 OK`, all 7 keys and types validated | **PASS** |
+| **TC-DEV-013** | Pump state validation ("on"/"off"/invalid) | Mocked records with pump states | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `"on"` -> 200, `"off"` -> 200, `"broken"` -> 500 | `200` for on/off, `500` for invalid | **PASS** |
+| **TC-DEV-014** | Level percent boundaries (0, 100, -1, 100.5) | Mocked records with level percentages | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `0.0` -> 200, `100.0` -> 200, `-1.0` -> 500, `100.5` -> 500 | Boundaries accepted, out-of-range rejected | **PASS** |
 
 ---
 
-### TC-003: Login Payload Validation Failure
-- **Test ID**: `TC-003`
-- **Description**: Verify that omitting required credential fields triggers request body validation error.
-- **Preconditions**: Server is running.
-- **Input**:
-  - Method: `POST`
-  - URL: `/login`
-  - Headers: `Content-Type: application/json`
-  - Body: `{}`
-- **Expected Result**:
-  - Status Code: `422 Unprocessable Entity`
-  - Body: Contains validation errors specifying missing `username` and `password` body fields.
-- **Actual Result**:
-  - Status Code: `422 Unprocessable Entity`
-  - Body: Field errors located at `['body', 'username']` and `['body', 'password']`.
-- **Status**: **PASS**
+## 4. Category 3: Tank Levels & Threshold Alerts (`tests/test_tank_levels.py`)
+
+| Test ID | Test Description | Preconditions | Input (Method, URL, Payload) | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-LVL-001** | Level boundary 0% accepted | Mock reading at 0.0% | `GET /api/tank/summary` | `200 OK`, `current_level: 0.0`, `active_alert: true` | `200 OK`, alert raised | **PASS** |
+| **TC-LVL-002** | Level boundary 100% accepted | Mock reading at 100.0% | `GET /api/tank/summary` | `200 OK`, `current_level: 100.0`, `active_alert: false` | `200 OK`, nominal state | **PASS** |
+| **TC-LVL-003** | Level below 0% rejected (-1.0%) | Mock reading at -1.0% | `GET /api/tank/summary` | `500 Internal Server Error`<br>`detail: "Tank reading level must be between 0 and 100"` | `500 Internal Server Error`, rejected | **PASS** |
+| **TC-LVL-004** | Level above 100% rejected (100.5%) | Mock reading at 100.5% | `GET /api/tank/summary` | `500 Internal Server Error`<br>`detail: "Tank reading level must be between 0 and 100"` | `500 Internal Server Error`, rejected | **PASS** |
+| **TC-LVL-005** | Pydantic TankReading model boundary | Direct model instantiation | `TankReading(timestamp=..., level=-0.1)`<br>`TankReading(timestamp=..., level=100.1)` | Raises `pydantic.ValidationError` | `ValidationError` raised for both bounds | **PASS** |
+| **TC-LVL-006** | Level boundary 19.9% active alert | Mock reading at 19.9% | `GET /api/tank/summary` | `200 OK`, `current_level: 19.9`, `active_alert: true`, historical count = 1 | `200 OK`, active alert triggered | **PASS** |
+| **TC-LVL-007** | Level boundary 20.0% nominal | Mock reading at 20.0% | `GET /api/tank/summary` | `200 OK`, `current_level: 20.0`, `active_alert: false`, historical count = 0 | `200 OK`, nominal threshold maintained | **PASS** |
+| **TC-LVL-008** | Level boundary 20.1% nominal | Mock reading at 20.1% | `GET /api/tank/summary` | `200 OK`, `current_level: 20.1`, `active_alert: false`, historical count = 0 | `200 OK`, nominal threshold maintained | **PASS** |
+| **TC-LVL-009** | Empty reading history graceful handle | Mock empty `{"tank_readings": []}` | `GET /api/tank/summary` | `200 OK`, `current_level: 0.0`, `is_stale: true`, `latest_reading_timestamp: null` | `200 OK`, zeroed summary returned | **PASS** |
+| **TC-LVL-010** | Malformed reading missing level | Reading dictionary omits `level` | `GET /api/tank/summary` | `500 Internal Server Error`<br>`detail: "Malformed tank reading"` | `500 Internal Server Error`, malformed caught | **PASS** |
+| **TC-LVL-011** | Malformed reading non-numeric level | Reading has `"level": "seventy"` | `GET /api/tank/summary` | `500 Internal Server Error`<br>`detail: "Tank reading level must be between 0 and 100"` | `500 Internal Server Error`, non-numeric caught | **PASS** |
+| **TC-LVL-012** | Historical event distinction | Prior 18%, current 55% | `GET /api/tank/summary` | `200 OK`, `current_level: 55.0`, `active_alert: false`, historical events = 1 | `200 OK`, active alert = false, historical = 1 | **PASS** |
+| **TC-LVL-013** | Active alert with latest reading low | Prior 55%, current 18% | `GET /api/tank/summary` | `200 OK`, `current_level: 18.0`, `active_alert: true`, historical events = 1 | `200 OK`, active alert = true | **PASS** |
 
 ---
 
-### TC-004: Access Device Status with Valid Bearer Token
-- **Test ID**: `TC-004`
-- **Description**: Verify that an authenticated user can inspect the telemetry status of an active online device.
-- **Preconditions**: Mock data contains device `tank-001` with `online: true` and recent timestamp.
-- **Input**:
-  - Method: `GET`
-  - URL: `/device/tank-001/status`
-  - Headers: `Authorization: Bearer aquasense-demo-token`
-- **Expected Result**:
-  - Status Code: `200 OK`
-  - Body: Contains `id: "tank-001"`, `online: true`, `status: "online"`, `is_stale: false`, and an ISO 8601 `last_seen` timestamp.
-- **Actual Result**:
-  - Status Code: `200 OK`
-  - Body: `{"id": "tank-001", "online": true, "last_seen": "2026-11-04T12:00:00+05:30", "is_stale": false, "status": "online"}`
-- **Status**: **PASS**
+## 5. Category 4: Timestamps & Freshness (`tests/test_timestamps_and_freshness.py`)
+
+| Test ID | Test Description | Preconditions | Input / Scenario | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-TIME-001** | Valid UTC ISO timestamp normalization | Direct helper call | Parse `"2026-11-04T10:00:00Z"` | UTC `datetime` with `hour=10`, `tzinfo=timezone.utc` | Timezone normalized to UTC | **PASS** |
+| **TC-TIME-002** | Valid IST offset normalization | Direct helper call | Parse `"2026-11-04T15:30:00+05:30"` | UTC `datetime` with `hour=10` (15:30 - 5:30) | Normalized UTC hour = 10 | **PASS** |
+| **TC-TIME-003** | Valid EDT offset normalization | Direct helper call | Parse `"2026-11-04T06:00:00-04:00"` | UTC `datetime` with `hour=10` (06:00 + 4:00) | Normalized UTC hour = 10 | **PASS** |
+| **TC-TIME-004** | Mixed timezone chronological sorting | 3 readings (UTC, IST, EDT) | `GET /api/tank/summary` | Sorted in true chronological order by UTC time | Chronological ordering guaranteed | **PASS** |
+| **TC-TIME-005** | Naive timestamp rejection | Naive string without offset | Parse `"2026-11-04T12:00:00"` | Raises `ValueError` ("Timezone offset is required") | Rejected at helper, model, and API levels | **PASS** |
+| **TC-TIME-006** | Invalid unparseable timestamp strings | Bad strings ("not-a-timestamp", "2026-99-99") | Helper & API parse | Raises `ValueError`, API returns 500 | Bad strings rejected | **PASS** |
+| **TC-TIME-007** | Invalid non-string timestamp types | Integer timestamp input `123456` | Parse helper call | Raises `ValueError` ("Expected str or datetime") | Non-string rejected | **PASS** |
+| **TC-TIME-008** | Future timestamp within 5m tolerance | Timestamp UTC + 3 minutes | Model & API validation | Accepted, returns `200 OK` | Tolerated drift accepted | **PASS** |
+| **TC-TIME-009** | Future timestamp beyond 5m tolerance | Timestamp UTC + 6 minutes | Model & API validation | Raises `ValidationError`, API returns 400 | Excessive drift rejected with 400 | **PASS** |
+| **TC-TIME-010** | Stale readings flag (>24h) | Readings 26 hours in past | `GET /api/tank/summary` | `200 OK`, `is_stale: true`, readings preserved | `200 OK`, history preserved with stale tag | **PASS** |
+| **TC-TIME-011** | Fresh readings flag ($\le$ 24h) | Readings 15 minutes in past | `GET /api/tank/summary` | `200 OK`, `is_stale: false` | `200 OK`, flagged live | **PASS** |
+| **TC-TIME-012** | Monotonic ordering guarantee | Unsorted readings input | `GET /api/tank/summary` | Ascending chronological order returned | Output strictly sorted ascending | **PASS** |
+| **TC-TIME-013** | Device status future and stale check | Future & stale device mocks | `GET /device/{id}/status` | Future -> 400, Stale -> 200 `status: "stale"` | Status codes 400 and 200 verified | **PASS** |
+| **TC-TIME-014** | Reference time naive rejection | `AQUASENSE_REFERENCE_TIME` naive | `get_current_utc_time()` | Raises `ValueError` ("Timezone offset is required") | Naive env var rejected | **PASS** |
+| **TC-TIME-015** | Reference time aware freezes clock | `AQUASENSE_REFERENCE_TIME` aware | `get_current_utc_time()` | Clock frozen at exact UTC equivalent | Deterministic clock freeze verified | **PASS** |
+| **TC-TIME-016** | Actual repository JSON file (frozen) | Real `data/mock_data.json` with reference time | `GET /api/tank/summary` & `GET /device/{id}/status` | Current: 55%, Min: 18%, Max: 78%, 8 readings | Assignment telemetry specs verified | **PASS** |
+| **TC-TIME-017** | Actual repository JSON file (wall-clock) | Real `data/mock_data.json` without env var | `GET /api/tank/summary` | `current_level: 55.0`, `is_stale: true` (>24h old) | Stale tag verified under wall-clock | **PASS** |
 
 ---
 
-### TC-005: Access Device Status with Invalid Bearer Token
-- **Test ID**: `TC-005`
-- **Description**: Verify that a malformed or invalid token is rejected with HTTP 401.
-- **Preconditions**: Server is running.
-- **Input**:
-  - Method: `GET`
-  - URL: `/device/tank-001/status`
-  - Headers: `Authorization: Bearer invalid-token-xyz`
-- **Expected Result**:
-  - Status Code: `401 Unauthorized`
-  - Body: `{"detail": "Invalid bearer token"}`
-- **Actual Result**:
-  - Status Code: `401 Unauthorized`
-  - Body: `{"detail": "Invalid bearer token"}`
-- **Status**: **PASS**
+## 6. Category 5: Deterministic Mocked Responses (`tests/test_mocked_api_responses.py`)
+
+| Test ID | Test Description | Preconditions | Input / Scenario | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-MOCK-001** | Nominal multi-reading stream | Deterministic mock (3 readings) | `GET /api/tank/summary` | `200 OK`, `current_level: 60.0`, `is_stale: false` | `200 OK`, live metrics verified | **PASS** |
+| **TC-MOCK-002** | Stale telemetry mock (>48h) | Mock readings 48 hours ago | `GET /api/tank/summary` | `200 OK`, `is_stale: true`, historical metrics intact | `200 OK`, stale status verified | **PASS** |
+| **TC-MOCK-003** | Malformed data source (not a list) | Mock `tank_readings` as string | `GET /api/tank/summary` | `500 Internal Server Error`<br>`detail: "Mock data has no tank readings"` | `500 Internal Server Error`, exact message | **PASS** |
+| **TC-MOCK-004** | Corrupted reading items (non-dict) | Mock `tank_readings` has integers | `GET /api/tank/summary` | `500 Internal Server Error`<br>`detail: "Malformed tank reading"` | `500 Internal Server Error`, exact message | **PASS** |
+| **TC-MOCK-005** | Offline hardware simulation | Mock device `online: false` | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `503 Service Unavailable`<br>`{"message": "Device is offline", "device_id": "tank-001"}` | `503 Service Unavailable`, exact detail | **PASS** |
+| **TC-MOCK-006** | Stale hardware simulation | Mock device seen 36h ago | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `200 OK`, `is_stale: true`, `status: "stale"` | `200 OK`, hardware staleness flagged | **PASS** |
+| **TC-MOCK-007** | Auth failure rejection | Missing & corrupted token | `GET /device/tank-001/status` | `401 Unauthorized` for both missing and bad token | `401 Unauthorized` verified | **PASS** |
+| **TC-MOCK-008** | Future hardware clock drift (15m) | Mock device 15m in future | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `400 Bad Request` ("future" in detail) | `400 Bad Request`, drift rejected | **PASS** |
+| **TC-MOCK-009** | Missing `online` field | Mock device record omits `online` | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `500 Internal Server Error`<br>`detail: "Device record is malformed"` | `500 Internal Server Error`, malformed caught | **PASS** |
+| **TC-MOCK-010** | Missing `last_seen` field | Mock device record omits `last_seen` | `GET /device/tank-001/status`<br>`Bearer aquasense-demo-token` | `500 Internal Server Error`<br>`detail: "Device record is malformed"` | `500 Internal Server Error`, malformed caught | **PASS** |
+| **TC-MOCK-011** | End-to-end async HTTPX client | ASGI in-memory transport | Async client calls `/health`, `/login`, `/api/tank/summary`, `/device/status` | All endpoints return HTTP 200 with valid JSON | Async client flow verified | **PASS** |
+| **TC-MOCK-012** | API root metadata endpoint | Server running | `GET /api` | `200 OK`, `status: "running"`, `docs: "/docs"` | `200 OK`, metadata verified | **PASS** |
+| **TC-MOCK-013** | File read error in data loader | Disk I/O error mocked (`OSError`) | `load_data()` call | `500 Internal Server Error`<br>`detail: "Mock data is unavailable or malformed"` | `500 Internal Server Error`, I/O handled | **PASS** |
+| **TC-MOCK-014** | Non-dictionary JSON root | JSON payload mocked as list | `load_data()` call | `500 Internal Server Error`<br>`detail: "Mock data must be a JSON object"` | `500 Internal Server Error`, non-dict caught | **PASS** |
+| **TC-MOCK-015** | Missing devices list in payload | JSON payload omits `"devices"` list | `get_device("tank-001")` call | `500 Internal Server Error`<br>`detail: "Mock data has no valid devices list"` | `500 Internal Server Error`, missing list caught | **PASS** |
+| **TC-MOCK-016** | Unexpected data error handling | `tank_readings()` raises `RuntimeError` | `GET /api/tank/summary` | `500 Internal Server Error`<br>`detail: "Mock data contains an invalid tank reading"` | `500 Internal Server Error`, runtime error handled | **PASS** |
+| **TC-MOCK-017** | Path resolver fallback branches | `primary.exists()` mocked as False | `_resolve_data_file()`, `_resolve_frontend_dir()` | Fallback to `cwd` and fallback defaults | Path resolvers verified | **PASS** |
 
 ---
 
-### TC-006: Access Device Status Without Authorization Header
-- **Test ID**: `TC-006`
-- **Description**: Verify that requests missing the Authorization header are rejected.
-- **Preconditions**: Server is running.
-- **Input**:
-  - Method: `GET`
-  - URL: `/device/tank-001/status`
-  - Headers: None
-- **Expected Result**:
-  - Status Code: `401 Unauthorized`
-  - Body: `{"detail": "Bearer token required"}`
-- **Actual Result**:
-  - Status Code: `401 Unauthorized`
-  - Body: `{"detail": "Bearer token required"}`
-- **Status**: **PASS**
+## 7. Category 6: Frontend Mathematical & Security Verification (`tests/test_frontend_dashboard_logic.py`)
 
----
-
-### TC-007: Request Status of Nonexistent Device ID
-- **Test ID**: `TC-007`
-- **Description**: Verify that querying an unregistered device ID returns HTTP 404 Not Found.
-- **Preconditions**: Authenticated with valid Bearer token.
-- **Input**:
-  - Method: `GET`
-  - URL: `/device/nonexistent-device-999/status`
-  - Headers: `Authorization: Bearer aquasense-demo-token`
-- **Expected Result**:
-  - Status Code: `404 Not Found`
-  - Body: `{"detail": "Device not found"}`
-- **Actual Result**:
-  - Status Code: `404 Not Found`
-  - Body: `{"detail": "Device not found"}`
-- **Status**: **PASS**
-
----
-
-### TC-008: Handle Device in Offline State
-- **Test ID**: `TC-008`
-- **Description**: Verify that inspecting an offline device raises an explicit HTTP 503 Service Unavailable alert.
-- **Preconditions**: Mock dataset has device `device-offline` configured with `online: false`.
-- **Input**:
-  - Method: `GET`
-  - URL: `/device/device-offline/status`
-  - Headers: `Authorization: Bearer aquasense-demo-token`
-- **Expected Result**:
-  - Status Code: `503 Service Unavailable`
-  - Body: `{"detail": {"message": "Device is offline", "device_id": "device-offline"}}`
-- **Actual Result**:
-  - Status Code: `503 Service Unavailable`
-  - Body: `{"detail": {"message": "Device is offline", "device_id": "device-offline"}}`
-- **Status**: **PASS**
-
----
-
-### TC-009: Handle Malformed Device Record (Non-Boolean Online Value)
-- **Test ID**: `TC-009`
-- **Description**: Verify that if persistent storage holds a corrupt record where `online` is non-boolean, a safe 500 server error is returned.
-- **Preconditions**: Mock storage returns record with `"online": "not-a-boolean"`.
-- **Input**:
-  - Method: `GET`
-  - URL: `/device/device-malformed/status`
-  - Headers: `Authorization: Bearer aquasense-demo-token`
-- **Expected Result**:
-  - Status Code: `500 Internal Server Error`
-  - Body: `{"detail": "Device record is malformed"}`
-- **Actual Result**:
-  - Status Code: `500 Internal Server Error`
-  - Body: `{"detail": "Device record is malformed"}`
-- **Status**: **PASS**
-
----
-
-### TC-010: Handle Malformed Device Timestamp Format
-- **Test ID**: `TC-010`
-- **Description**: Verify that corrupt or unparseable date strings for `last_seen` raise a 500 error.
-- **Preconditions**: Mock storage returns record with `"last_seen": "invalid-non-iso-timestamp"`.
-- **Input**:
-  - Method: `GET`
-  - URL: `/device/device-bad-date/status`
-  - Headers: `Authorization: Bearer aquasense-demo-token`
-- **Expected Result**:
-  - Status Code: `500 Internal Server Error`
-  - Body: `{"detail": "Device last_seen is malformed"}`
-- **Actual Result**:
-  - Status Code: `500 Internal Server Error`
-  - Body: `{"detail": "Device last_seen is malformed"}`
-- **Status**: **PASS**
-
----
-
-### TC-011: Handle Stale Device Timestamp (> 24 Hours Inactive)
-- **Test ID**: `TC-011`
-- **Description**: Verify that a device whose last reading was over 24 hours ago is flagged with `is_stale: true` and `status: "stale"`.
-- **Preconditions**: Mock storage contains device `device-stale` with `last_seen` dated older than 24 hours.
-- **Input**:
-  - Method: `GET`
-  - URL: `/device/device-stale/status`
-  - Headers: `Authorization: Bearer aquasense-demo-token`
-- **Expected Result**:
-  - Status Code: `200 OK`
-  - Body: `id: "device-stale"`, `online: true`, `is_stale: true`, `status: "stale"`.
-- **Actual Result**:
-  - Status Code: `200 OK`
-  - Body: `{"id": "device-stale", "online": true, "last_seen": "2026-10-01T10:00:00+05:30", "is_stale": true, "status": "stale"}`
-- **Status**: **PASS**
-
----
-
-### TC-012: Tank Level Boundary - Lower Bound 0% Accepted
-- **Test ID**: `TC-012`
-- **Description**: Verify that a reading at exactly 0.0% capacity is accepted and triggers the active low-level alert.
-- **Preconditions**: Mock data returns tank reading with `level: 0.0`.
-- **Input**:
-  - Method: `GET`
-  - URL: `/api/tank/summary`
-- **Expected Result**:
-  - Status Code: `200 OK`
-  - Body: `current_level: 0.0`, `minimum_level: 0.0`, `active_alert: true`, readings array contains `0.0`.
-- **Actual Result**:
-  - Status Code: `200 OK`
-  - Body: `current_level: 0.0`, `minimum_level: 0.0`, `active_alert: true`.
-- **Status**: **PASS**
-
----
-
-### TC-013: Tank Level Boundary - Upper Bound 100% Accepted
-- **Test ID**: `TC-013`
-- **Description**: Verify that a reading at exactly 100.0% capacity is accepted as safe normal operation.
-- **Preconditions**: Mock data returns tank reading with `level: 100.0`.
-- **Input**:
-  - Method: `GET`
-  - URL: `/api/tank/summary`
-- **Expected Result**:
-  - Status Code: `200 OK`
-  - Body: `current_level: 100.0`, `maximum_level: 100.0`, `active_alert: false`.
-- **Actual Result**:
-  - Status Code: `200 OK`
-  - Body: `current_level: 100.0`, `maximum_level: 100.0`, `active_alert: false`.
-- **Status**: **PASS**
-
----
-
-### TC-014: Tank Level Boundary - Value Below 0% Rejected
-- **Test ID**: `TC-014`
-- **Description**: Verify that invalid negative levels (e.g. -1.0%) are rejected with HTTP 500 error.
-- **Preconditions**: Storage contains invalid negative reading.
-- **Input**:
-  - Method: `GET`
-  - URL: `/api/tank/summary`
-- **Expected Result**:
-  - Status Code: `500 Internal Server Error`
-  - Body: `{"detail": "Tank reading level must be between 0 and 100"}`
-- **Actual Result**:
-  - Status Code: `500 Internal Server Error`
-  - Body: `{"detail": "Tank reading level must be between 0 and 100"}`
-- **Status**: **PASS**
-
----
-
-### TC-015: Tank Level Boundary - Value Above 100% Rejected
-- **Test ID**: `TC-015`
-- **Description**: Verify that capacity levels exceeding 100% (e.g. 100.5%) are rejected with HTTP 500 error.
-- **Preconditions**: Storage contains out-of-bounds reading.
-- **Input**:
-  - Method: `GET`
-  - URL: `/api/tank/summary`
-- **Expected Result**:
-  - Status Code: `500 Internal Server Error`
-  - Body: `{"detail": "Tank reading level must be between 0 and 100"}`
-- **Actual Result**:
-  - Status Code: `500 Internal Server Error`
-  - Body: `{"detail": "Tank reading level must be between 0 and 100"}`
-- **Status**: **PASS**
-
----
-
-### TC-016: Pydantic Data Model Level Boundary Constraints
-- **Test ID**: `TC-016`
-- **Description**: Verify direct programmatic validation in `TankReading(timestamp, level)` model enforcing `ge=0` and `le=100`.
-- **Preconditions**: Import `TankReading` from `backend.app.models`.
-- **Input**: Instances created with `level=0`, `level=100`, `level=-0.1`, and `level=100.1`.
-- **Expected Result**: Levels 0 and 100 instantiate without error; levels -0.1 and 100.1 raise `pydantic.ValidationError`.
-- **Actual Result**: Lower and upper valid bounds succeeded; negative and overflow bounds raised `ValidationError`.
-- **Status**: **PASS**
+| Test ID | Test Description | Preconditions | Input / Algorithm | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-FE-001** | Alert boundary 0.0% | Unit test | `evaluateAlertThreshold(0.0)` | `true` (Active alert triggered) | `true` | **PASS** |
+| **TC-FE-002** | Alert boundary 0.0001% | Unit test | `evaluateAlertThreshold(0.0001)` | `true` (Active alert triggered) | `true` | **PASS** |
+| **TC-FE-003** | Alert boundary 10.5% | Unit test | `evaluateAlertThreshold(10.5)` | `true` (Active alert triggered) | `true` | **PASS** |
+| **TC-FE-004** | Alert boundary 19.9% | Unit test | `evaluateAlertThreshold(19.9)` | `true` (Active alert triggered) | `true` | **PASS** |
+| **TC-FE-005** | Alert boundary 19.999% | Unit test | `evaluateAlertThreshold(19.999)` | `true` (Active alert triggered) | `true` | **PASS** |
+| **TC-FE-006** | Alert boundary 20.0% (exact floor) | Unit test | `evaluateAlertThreshold(20.0)` | `false` (Nominal capacity) | `false` | **PASS** |
+| **TC-FE-007** | Alert boundary 20.001% | Unit test | `evaluateAlertThreshold(20.001)` | `false` (Nominal capacity) | `false` | **PASS** |
+| **TC-FE-008** | Alert boundary 20.1% | Unit test | `evaluateAlertThreshold(20.1)` | `false` (Nominal capacity) | `false` | **PASS** |
+| **TC-FE-009** | Alert boundary 55.0% | Unit test | `evaluateAlertThreshold(55.0)` | `false` (Nominal capacity) | `false` | **PASS** |
+| **TC-FE-010** | Alert boundary 100.0% | Unit test | `evaluateAlertThreshold(100.0)` | `false` (Nominal capacity) | `false` | **PASS** |
+| **TC-FE-011** | Alert invalid type rejection | Unit test | `evaluateAlertThreshold("abc")`, `evaluateAlertThreshold(True)` | Raises `TypeError` | `TypeError` raised | **PASS** |
+| **TC-FE-012** | Assignment dataset metrics verification | Real mock JSON | Current: 55%, Min: 18%, Max: 78% | `active_alert: false`, historical low events = 1 | Current 55%, Min 18%, Max 78%, Low 18% | **PASS** |
+| **TC-FE-013** | Time-proportional chart X-coordinates | 3 readings (06:00, 06:30, 20:00) | `calculateChartPoints(readings)` | Point 0: 46.0px, Point 1: 70.79px, Point 2: 740.0px | Proportional spacing verified (70.79px vs index midpoint 393px) | **PASS** |
+| **TC-FE-014** | Single reading chart centering | 1 reading input | `calculateChartPoints([reading])` | Point centered at `393.0px` | Centered at 393.0px | **PASS** |
+| **TC-FE-015** | Empty readings chart handling | Empty list `[]` | `calculateChartPoints([])` | Empty list `[]` without error | Empty list returned cleanly | **PASS** |
+| **TC-FE-016** | Frontend schema validation rules | Corrupted payload inputs | Min > Max, level > 100, naive ts | Validator raises `ValueError` | Out-of-range & naive ts rejected | **PASS** |
+| **TC-FE-017** | Static code audit: Zero `innerHTML` | `dashboard.js` AST & text scan | Check for dynamic `.innerHTML` | 0 occurrences in executable code | 0 dynamic innerHTML assignments | **PASS** |
+| **TC-FE-018** | Static HTML & CSS semantic hooks audit | `index.html` & `styles.css` scan | Check required IDs and classes | All 11 IDs and 8 CSS classes present | All required DOM hooks present | **PASS** |
+| **TC-FE-019** | Full tank summary contract satisfaction | FastAPI client call | `GET /api/tank/summary` | Validates against frontend schema | Schema contract satisfied | **PASS** |
+| **TC-FE-020** | Full device status contract & auth | FastAPI client call | `POST /login` + `GET /device/status` | Validates against frontend schema | Schema contract satisfied | **PASS** |
