@@ -19,6 +19,8 @@ def test_device_status_valid_token():
         "id": "tank-001",
         "online": True,
         "last_seen": (now_utc - timedelta(minutes=10)).isoformat(),
+        "level_percent": 55.0,
+        "pump_state": "off",
     }
     with patch("backend.app.main.get_device", return_value=fresh_record):
         response = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
@@ -30,6 +32,8 @@ def test_device_status_valid_token():
         assert body["status"] == "online"
         assert body["is_stale"] is False
         assert "last_seen" in body
+        assert body["level_percent"] == 55.0
+        assert body["pump_state"] == "off"
 
 
 def test_device_status_invalid_token():
@@ -101,6 +105,21 @@ def test_device_status_malformed_timestamp():
         assert body["detail"] == "Device last_seen is malformed"
 
 
+def test_device_status_missing_last_seen():
+    """Verify device record missing the 'last_seen' field returns 500 malformed error."""
+    missing_last_seen_record = {
+        "id": "device-missing-last-seen",
+        "online": True,
+        # 'last_seen' key completely absent
+    }
+    with patch("backend.app.main.get_device", return_value=missing_last_seen_record):
+        response = client.get("/device/device-missing-last-seen/status", headers=VALID_AUTH_HEADER)
+        
+        assert response.status_code == 500
+        body = response.json()
+        assert body["detail"] == "Device record is malformed"
+
+
 def test_device_status_stale_timestamp():
     """Scenario 9: Handle stale last_seen timestamps older than 24 hours deterministically."""
     now_utc = get_current_utc_time()
@@ -152,3 +171,97 @@ def test_device_status_future_within_tolerance_accepted():
         body = response.json()
         assert body["online"] is True
         assert body["is_stale"] is False
+
+
+def test_device_status_response_schema_contract():
+    """Verify device status response strictly adheres to exact contract schema, keys, and data types."""
+    now_utc = get_current_utc_time()
+    record = {
+        "id": "tank-001",
+        "online": True,
+        "last_seen": (now_utc - timedelta(minutes=5)).isoformat(),
+        "level_percent": 72.5,
+        "pump_state": "on",
+    }
+    with patch("backend.app.main.get_device", return_value=record):
+        response = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        assert response.status_code == 200
+        body = response.json()
+        
+        # Verify exact field presence
+        expected_keys = {"id", "online", "status", "last_seen", "is_stale", "level_percent", "pump_state"}
+        assert set(body.keys()) == expected_keys
+        
+        # Verify data types and constraints
+        assert isinstance(body["id"], str) and body["id"] == "tank-001"
+        assert isinstance(body["online"], bool) and body["online"] is True
+        assert isinstance(body["status"], str) and body["status"] == "online"
+        assert isinstance(body["is_stale"], bool) and body["is_stale"] is False
+        assert isinstance(body["last_seen"], str) and body["last_seen"].endswith("Z") or "+00:00" in body["last_seen"]
+        assert isinstance(body["level_percent"], (int, float)) and body["level_percent"] == 72.5
+        assert isinstance(body["pump_state"], str) and body["pump_state"] in ("on", "off")
+
+
+def test_device_status_pump_state_validation():
+    """Verify pump_state accepts 'on' and 'off', and rejects invalid states."""
+    now_utc = get_current_utc_time()
+    base_record = {
+        "id": "tank-001",
+        "online": True,
+        "last_seen": (now_utc - timedelta(minutes=5)).isoformat(),
+        "level_percent": 50.0,
+    }
+
+    # Valid 'on'
+    with patch("backend.app.main.get_device", return_value={**base_record, "pump_state": "on"}):
+        resp_on = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        assert resp_on.status_code == 200
+        assert resp_on.json()["pump_state"] == "on"
+
+    # Valid 'off'
+    with patch("backend.app.main.get_device", return_value={**base_record, "pump_state": "off"}):
+        resp_off = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        assert resp_off.status_code == 200
+        assert resp_off.json()["pump_state"] == "off"
+
+    # Invalid pump state
+    with patch("backend.app.main.get_device", return_value={**base_record, "pump_state": "broken"}):
+        resp_invalid = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        assert resp_invalid.status_code == 500
+        assert resp_invalid.json()["detail"] == "Device record is malformed"
+
+
+def test_device_status_level_percent_boundary_validation():
+    """Verify level_percent validates 0% to 100% boundary on device status."""
+    now_utc = get_current_utc_time()
+    base_record = {
+        "id": "tank-001",
+        "online": True,
+        "last_seen": (now_utc - timedelta(minutes=5)).isoformat(),
+        "pump_state": "off",
+    }
+
+    # Boundary 0%
+    with patch("backend.app.main.get_device", return_value={**base_record, "level_percent": 0.0}):
+        resp_0 = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        assert resp_0.status_code == 200
+        assert resp_0.json()["level_percent"] == 0.0
+
+    # Boundary 100%
+    with patch("backend.app.main.get_device", return_value={**base_record, "level_percent": 100.0}):
+        resp_100 = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        assert resp_100.status_code == 200
+        assert resp_100.json()["level_percent"] == 100.0
+
+    # Below 0% rejected
+    with patch("backend.app.main.get_device", return_value={**base_record, "level_percent": -1.0}):
+        resp_neg = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        assert resp_neg.status_code == 500
+        assert resp_neg.json()["detail"] == "Device record is malformed"
+
+    # Above 100% rejected
+    with patch("backend.app.main.get_device", return_value={**base_record, "level_percent": 100.5}):
+        resp_over = client.get("/device/tank-001/status", headers=VALID_AUTH_HEADER)
+        assert resp_over.status_code == 500
+        assert resp_over.json()["detail"] == "Device record is malformed"
+

@@ -186,8 +186,8 @@
       <section class="page-heading reveal" aria-labelledby="page-title">
         <div class="heading-content">
           <div class="eyebrow-wrapper">
-            <span class="live-dot-beacon"></span>
-            <p class="eyebrow">AQUASENSE · TELEMETRY FIELD NODE</p>
+            <span class="live-dot-beacon" id="live-beacon"></span>
+            <p class="eyebrow" id="eyebrow-text">AQUASENSE · TELEMETRY FIELD NODE</p>
           </div>
           <h1 id="page-title">Water, in <span class="title-shimmer">balance.</span></h1>
           <p class="page-subtitle">Continuous high-precision capacity monitoring, safety alerts, and hydraulic history.</p>
@@ -204,7 +204,7 @@
           <div class="tank-info">
             <div class="tank-title-row">
               <strong>Main Storage Tank</strong>
-              <span class="online-tag">Online</span>
+              <span class="online-tag" id="device-status-tag">Checking...</span>
             </div>
             <small>Field Device · <code>tank-001</code></small>
           </div>
@@ -215,6 +215,23 @@
       <div class="state-banner loading-banner" id="loading-state" role="status" hidden>
         <span class="spinner" aria-hidden="true"></span>
         <span>Synchronizing with AquaSense telemetry stream…</span>
+      </div>
+
+      <div class="state-banner stale-banner" id="stale-state" role="status" hidden>
+        <span class="state-icon stale-icon" aria-hidden="true">⏱</span>
+        <div class="stale-text-wrap">
+          <strong>Historical Telemetry Notice</strong>
+          <span id="stale-message">No live telemetry received in over 24 hours. Displaying archived sensor log.</span>
+        </div>
+      </div>
+
+      <div class="state-banner warning-banner" id="cached-state" role="alert" hidden>
+        <span class="state-icon warn-icon" aria-hidden="true">!</span>
+        <div class="warning-text-wrap">
+          <strong>Displaying Cached Telemetry.</strong>
+          <span id="cached-message">Backend service unreachable. Retaining last verified dataset.</span>
+        </div>
+        <button class="retry-pill-btn warn-retry-btn" id="cached-retry-button" type="button">Retry connection</button>
       </div>
 
       <div class="state-banner error-banner" id="error-state" role="alert" hidden>
@@ -447,7 +464,7 @@
         <div class="footer-right">
           <span>Safety Threshold: <strong>20% Critical Floor</strong></span>
           <span class="footer-sep">·</span>
-          <span>FastAPI Microservice Status: <strong class="api-ok-badge">Operational</strong></span>
+          <span>FastAPI Microservice Status: <strong class="api-ok-badge" id="api-footer-status">Operational</strong></span>
         </div>
       </footer>
     </main>

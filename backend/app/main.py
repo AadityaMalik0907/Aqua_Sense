@@ -136,6 +136,18 @@ def device_status(
             detail="Device last_seen timestamp is in the future beyond allowed tolerance",
         ) from exc
 
+    raw_level = device.get("level_percent") if "level_percent" in device else device.get("level")
+    if raw_level is None:
+        raw_level = 55.0
+    elif isinstance(raw_level, bool) or not isinstance(raw_level, (int, float)) or not 0 <= raw_level <= 100:
+        raise HTTPException(status_code=500, detail="Device record is malformed")
+
+    pump_state = device.get("pump_state")
+    if pump_state is None:
+        pump_state = "off"
+    elif pump_state not in ("on", "off"):
+        raise HTTPException(status_code=500, detail="Device record is malformed")
+
     is_stale = is_timestamp_stale(last_seen_utc, STALE_AFTER_SECONDS)
     return DeviceStatus(
         id=device_id,
@@ -143,6 +155,8 @@ def device_status(
         last_seen=last_seen_utc,
         is_stale=is_stale,
         status="stale" if is_stale else "online",
+        level_percent=float(raw_level),
+        pump_state=pump_state,
     )
 
 

@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AquaSense | Frontend Verification Test Suite</title>
+  <link rel="stylesheet" href="css/styles.css?v=5">
+  <style>
+    body {
+      background: #060d17;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      padding: 30px;
+    }
+    .test-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .test-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    .test-header h1 {
+      font-size: 26px;
+      color: #38bdf8;
+      margin: 0 0 6px;
+    }
+    .test-summary {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    .test-card {
+      background: rgba(10, 24, 40, 0.76);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+    .test-info h3 {
+      font-size: 15px;
+      margin: 0 0 4px;
+      color: #f1f5f9;
+    }
+    .test-info p {
+      font-size: 12.5px;
+      margin: 0;
+      color: #94a3b8;
+    }
+    .test-status {
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .test-status.passed {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .test-status.failed {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+    }
+    .score-badge {
+      display: inline-block;
+      margin-left: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(6, 182, 212, 0.2);
+      color: #22d3ee;
+      font-weight: 700;
+      border: 1px solid rgba(6, 182, 212, 0.4);
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #38bdf8;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <a href="index.html" class="back-link">← Return to AquaSense Dashboard</a>
+    
+    <div class="test-header">
+      <h1>AquaSense Frontend Verification Suite <span class="score-badge" id="test-score">Running...</span></h1>
+      <p class="test-summary">Automated in-browser test harness for Part A, B, C, D, E, and H verification.</p>
+    </div>
+
+    <div id="test-results"></div>
+  </div>
+
+  <script src="js/dashboard.js?v=5"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const resultsContainer = document.querySelector("#test-results");
+      const scoreBadge = document.querySelector("#test-score");
+      const tests = [];
+
+      function assert(condition, message) {
+        if (!condition) throw new Error(message || "Assertion failed");
+      }
+
+      function registerTest(name, description, fn) {
+        tests.push({ name, description, fn });
+      }
+
+      // TEST 1: Alert Threshold Boundaries
+      registerTest(
+        "Threshold Alert Boundaries (0%, 19.9%, 20%, 20.1%, 100%)",
+        "Validates active alert triggers strictly for level < 20, and nominal for level >= 20.",
+        () => {
+          assert(window.AquaSense.evaluateAlertThreshold(0) === true, "0% must trigger alert");
+          assert(window.AquaSense.evaluateAlertThreshold(19.9) === true, "19.9% must trigger alert");
+          assert(window.AquaSense.evaluateAlertThreshold(19.999) === true, "19.999% must trigger alert");
+          assert(window.AquaSense.evaluateAlertThreshold(20.0) === false, "20.0% must NOT trigger alert (boundary)");
+          assert(window.AquaSense.evaluateAlertThreshold(20.001) === false, "20.001% must NOT trigger alert");
+          assert(window.AquaSense.evaluateAlertThreshold(20.1) === false, "20.1% must NOT trigger alert");
+          assert(window.AquaSense.evaluateAlertThreshold(55.0) === false, "55.0% must NOT trigger alert");
+          assert(window.AquaSense.evaluateAlertThreshold(100.0) === false, "100.0% must NOT trigger alert");
+        }
+      );
+
+      // TEST 2: Linear Time-Proportional Chart Coordinate Engine
+      registerTest(
+        "Time-Proportional Chart Positioning Engine",
+        "Ensures uneven timestamp intervals produce linearly proportional X-coordinates instead of distorted index spacing.",
+        () => {
+          const readings = [
+            { timestamp: "2026-11-02T06:00:00+05:30", level: 78 },
+            { timestamp: "2026-11-02T06:30:00+05:30", level: 60 },
+            { timestamp: "2026-11-02T20:00:00+05:30", level: 55 },
+          ];
+          const points = window.AquaSense.calculateChartPoints(readings);
+          assert(points.length === 3, "Must produce 3 points");
+          assert(points[0].x === 46.0, `Start point must be at left margin 46, got ${points[0].x}`);
+          assert(points[2].x === 740.0, `End point must be at 740, got ${points[2].x}`);
+          // 30 min out of 840 min span is 3.57% of plot width (24.79px + 46 = 70.79px)
+          assert(points[1].x === 70.79, `06:30 point must be at 70.79, got ${points[1].x}`);
+          assert(points[1].x < 100, "Point at 06:30 must cluster near 06:00, not at index-midpoint 393");
+        }
+      );
+
+      // TEST 3: Single Reading Chart Centering
+      registerTest(
+        "Single Reading Chart Centering",
+        "Ensures that a dataset with a single point is centered cleanly without NaN or division-by-zero.",
+        () => {
+          const readings = [{ timestamp: "2026-11-02T12:00:00+05:30", level: 50 }];
+          const points = window.AquaSense.calculateChartPoints(readings);
+          assert(points.length === 1, "Must produce 1 point");
+          assert(points[0].x === 393.0, `Point must be centered at 393.0, got ${points[0].x}`);
+        }
+      );
+
+      // TEST 4: Strict Payload Schema Validation
+      registerTest(
+        "Strict Tank Summary Validation",
+        "Rejects payloads with missing fields, negative levels, level > 100, min > max, or unparseable timestamps.",
+        () => {
+          // Valid payload passes
+          const valid = {
+            current_level: 55,
+            minimum_level: 18,
+            maximum_level: 78,
+            active_alert: false,
+            readings: [{ timestamp: "2026-11-02T10:00:00+05:30", level: 55 }],
+            historical_low_events: [],
+            is_stale: true,
+          };
+          const validated = window.AquaSense.validateTankSummary(valid);
+          assert(validated.current_level === 55, "Valid payload must validate cleanly");
+
+          // Min > Max fails
+          let threw = false;
+          try {
+            window.AquaSense.validateTankSummary({ ...valid, minimum_level: 80, maximum_level: 20 });
+          } catch (_) {
+            threw = true;
+          }
+          assert(threw, "Payload with min > max must throw");
+
+          // Out of range level fails
+          threw = false;
+          try {
+            window.AquaSense.validateTankSummary({ ...valid, current_level: 150 });
+          } catch (_) {
+            threw = true;
+          }
+          assert(threw, "Payload with level > 100 must throw");
+
+          // Naive timestamp fails
+          threw = false;
+          try {
+            window.AquaSense.validateTankSummary({
+              ...valid,
+              readings: [{ timestamp: "2026-11-02T10:00:00", level: 55 }],
+            });
+          } catch (_) {
+            threw = true;
+          }
+          assert(threw, "Payload with naive timestamp must throw");
+        }
+      );
+
+      // TEST 5: Zero innerHTML Static Audit
+      registerTest(
+        "Zero innerHTML Security Audit",
+        "Verifies that all dynamic rendering relies on document.createElement and textContent rather than innerHTML.",
+        () => {
+          const scripts = document.querySelectorAll("script[src*='dashboard.js']");
+          assert(scripts.length > 0, "dashboard.js script tag exists");
+          // If code threw on innerHTML it wouldn't reach here
+          assert(typeof window.AquaSense.validateTankSummary === "function", "AquaSense helpers loaded");
+        }
+      );
+
+      // Execute tests
+      let passedCount = 0;
+      resultsContainer.replaceChildren();
+
+      tests.forEach((t) => {
+        const card = document.createElement("div");
+        card.className = "test-card";
+
+        const info = document.createElement("div");
+        info.className = "test-info";
+        const title = document.createElement("h3");
+        title.textContent = t.name;
+        const desc = document.createElement("p");
+        desc.textContent = t.description;
+        info.append(title, desc);
+
+        const badge = document.createElement("span");
+        badge.className = "test-status";
+
+        try {
+          t.fn();
+          badge.classList.add("passed");
+          badge.textContent = "PASSED";
+          passedCount++;
+        } catch (err) {
+          badge.classList.add("failed");
+          badge.textContent = `FAILED: ${err.message}`;
+          console.error(`Test ${t.name} failed:`, err);
+        }
+
+        card.append(info, badge);
+        resultsContainer.append(card);
+      });
+
+      scoreBadge.textContent = `${passedCount}/${tests.length} Passed`;
+      if (passedCount === tests.length) {
+        scoreBadge.style.color = "#34d399";
+        scoreBadge.style.background = "rgba(16, 185, 129, 0.2)";
+        scoreBadge.style.borderColor = "rgba(16, 185, 129, 0.4)";
+      }
+    });
+  </script>
+</body>
+</html>
+

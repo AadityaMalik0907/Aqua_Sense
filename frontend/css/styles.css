@@ -792,6 +792,24 @@ code {
   background: var(--cyan-glow);
   box-shadow: 0 0 10px var(--cyan-glow);
   animation: pulseDot 2s infinite ease-in-out;
+  transition: all 0.3s ease;
+}
+
+.live-dot-beacon.is-stale {
+  background: #f59e0b;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+  animation: pulseDotAmber 2.8s infinite ease-in-out;
+}
+
+.live-dot-beacon.is-offline {
+  background: #94a3b8;
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes pulseDotAmber {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.85); }
 }
 
 .eyebrow {
@@ -878,6 +896,26 @@ h1 {
   background: rgba(16, 185, 129, 0.15);
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.3);
+  display: inline-block;
+  transition: all 0.25s ease;
+}
+
+.online-tag.offline {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.online-tag.stale {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.online-tag.unknown {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.3);
 }
 
 .tank-info small {
@@ -969,6 +1007,73 @@ h1 {
   background: rgba(244, 63, 94, 0.35);
 }
 
+.stale-banner {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.stale-banner .stale-icon {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  font-size: 13px;
+}
+
+.stale-text-wrap strong {
+  display: block;
+  color: #ffffff;
+}
+
+.stale-text-wrap span {
+  font-size: 12px;
+  color: #fde68a;
+}
+
+.warning-banner {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  color: #fde047;
+}
+
+.warning-banner .warn-icon {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+  font-size: 13px;
+}
+
+.warning-text-wrap strong {
+  display: block;
+  color: #ffffff;
+}
+
+.warning-text-wrap span {
+  font-size: 12px;
+  color: #fef08a;
+}
+
+.warn-retry-btn {
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  color: #ffffff;
+}
+
+.warn-retry-btn:hover {
+  background: rgba(234, 179, 8, 0.35);
+}
+
+[data-theme="light"] .stale-text-wrap strong,
+[data-theme="light"] .warning-text-wrap strong {
+  color: #0f2736;
+}
+
+[data-theme="light"] .stale-text-wrap span {
+  color: #92400e;
+}
+
+[data-theme="light"] .warning-text-wrap span {
+  color: #854d0e;
+}
+
 /* ==========================================================================
    METRIC SUMMARY GRID & CARDS
    ========================================================================== */
@@ -1053,6 +1158,12 @@ h1 {
   color: #fb7185;
   box-shadow: 0 0 14px var(--red-glow);
   animation: pulseDot 2s infinite ease-in-out;
+}
+
+.status-chip.stale {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.38);
+  color: #fbbf24;
 }
 
 /* ==========================================================================

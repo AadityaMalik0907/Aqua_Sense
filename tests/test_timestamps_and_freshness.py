@@ -100,6 +100,32 @@ def test_naive_timestamp_rejected_without_silent_utc_assumption():
         assert "invalid tank reading" in response.json()["detail"].lower()
 
 
+def test_invalid_unparseable_timestamp_rejected():
+    """Completely unparseable and malformed timestamp strings must be rejected."""
+    invalid_strings = [
+        "not-a-timestamp",
+        "2026-99-99T99:99:99Z",
+        "2026-11-04",  # Missing time component
+        "",
+    ]
+    for bad_ts in invalid_strings:
+        with pytest.raises(ValueError):
+            parse_and_normalize_timestamp(bad_ts)
+
+        with pytest.raises(ValidationError):
+            TankReading(timestamp=bad_ts, level=50.0)
+
+    # Passing non-str, non-datetime types
+    with pytest.raises(ValueError, match="Expected str or datetime"):
+        parse_and_normalize_timestamp(123456)
+
+    # API returns 500 when mock data contains an unparseable timestamp
+    with patch("backend.app.data.load_data", return_value={"tank_readings": [{"timestamp": "corrupt-ts", "level": 50.0}]}):
+        response = client.get("/api/tank/summary")
+        assert response.status_code == 500
+        assert "invalid tank reading" in response.json()["detail"].lower()
+
+
 # ---------------------------------------------------------------------------
 # 4. Future Timestamps Within 5-Minute Tolerance
 # ---------------------------------------------------------------------------
@@ -332,6 +358,8 @@ def test_actual_mock_data_file_device_status(monkeypatch):
     assert b1["online"] is True
     assert b1["is_stale"] is False
     assert b1["status"] == "online"
+    assert b1["level_percent"] == 55.0
+    assert b1["pump_state"] == "off"
 
     # 2. device-offline (offline -> 503)
     resp2 = client.get("/device/device-offline/status", headers=VALID_AUTH_HEADER)

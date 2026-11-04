@@ -1,7 +1,7 @@
 """API request and response models."""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from pydantic import AliasChoices, BaseModel, Field, field_validator
 from .time_utils import parse_and_normalize_timestamp, validate_not_future
 
@@ -47,3 +47,5 @@ class DeviceStatus(BaseModel):
     last_seen: datetime
     is_stale: bool
     status: str
+    level_percent: float = Field(ge=0, le=100, default=55.0, validation_alias=AliasChoices("level_percent", "level"))
+    pump_state: Literal["on", "off"] = "off"
