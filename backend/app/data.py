@@ -6,7 +6,16 @@ from typing import Any
 
 from fastapi import HTTPException
 
-DATA_FILE = Path(__file__).resolve().parents[2] / "data" / "mock_data.json"
+def _resolve_data_file() -> Path:
+    primary = Path(__file__).resolve().parents[2] / "data" / "mock_data.json"
+    if primary.exists():
+        return primary
+    cwd_candidate = Path.cwd() / "data" / "mock_data.json"
+    if cwd_candidate.exists():
+        return cwd_candidate
+    return primary
+
+DATA_FILE = _resolve_data_file()
 
 
 def load_data() -> dict[str, Any]:

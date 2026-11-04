@@ -12,6 +12,7 @@ AquaSense is a modern water telemetry platform designed for industrial, municipa
 - [Project Directory Structure](#project-directory-structure)
 - [Windows Installation & Setup](#windows-installation--setup)
 - [Running the Application](#running-the-application)
+- [Deploying to Vercel](#deploying-to-vercel)
 - [API Documentation & Endpoints](#api-documentation--endpoints)
 - [Sample API Responses](#sample-api-responses)
 - [Automated Testing](#automated-testing)
@@ -136,6 +137,22 @@ With the virtual environment activated, launch Uvicorn:
 - **Dashboard Web UI**: Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in any modern browser.
 - **Interactive OpenAPI Documentation (Swagger)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - **Alternative ReDoc API Specification**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+---
+
+## Deploying to Vercel
+
+AquaSense is pre-configured for zero-friction serverless deployment on [Vercel](https://vercel.com):
+
+1. **Push your repository** to GitHub, GitLab, or Bitbucket.
+2. In the **Vercel Dashboard**, click **"Add New" -> "Project"** and import the repository.
+3. Keep the default settings (Vercel automatically detects Python, installs dependencies from `requirements.txt`, and uses `vercel.json`).
+4. Click **"Deploy"**.
+
+### What Vercel Configures Automatically:
+- `api/index.py`: Serverless ASGI function entrypoint.
+- `vercel.json`: Edge CDN rewrites routing `/api/*`, `/health`, `/login`, `/device/*`, and `/docs` to FastAPI, while delivering frontend static assets (`/`, `/css/*`, `/js/*`) directly from Vercel's global CDN.
+- `.vercelignore`: Excludes test suites, virtual environments, and caches from the deployment artifact.
 
 ---
 

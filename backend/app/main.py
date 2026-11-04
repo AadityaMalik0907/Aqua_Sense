@@ -20,14 +20,31 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500"],
-    allow_methods=["GET", "POST"],
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "*",
+    ],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 bearer_scheme = HTTPBearer(auto_error=False)
 STALE_AFTER_SECONDS = 24 * 60 * 60
 LOW_LEVEL_THRESHOLD = 20
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+
+def _resolve_frontend_dir() -> Path:
+    primary = Path(__file__).resolve().parents[2] / "frontend"
+    if primary.exists():
+        return primary
+    cwd_candidate = Path.cwd() / "frontend"
+    if cwd_candidate.exists():
+        return cwd_candidate
+    return primary
+
+FRONTEND_DIR = _resolve_frontend_dir()
 
 
 @app.get("/api")
@@ -104,4 +121,5 @@ def tank_summary() -> TankSummary:
 
 
 # Keep this catch-all mount last so API and documentation routes take precedence.
-app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+if FRONTEND_DIR.exists():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
